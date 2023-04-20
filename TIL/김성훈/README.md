@@ -87,10 +87,6 @@ public class DanceZone : MonoBehaviour
 
 이 때 Parameters에 코드와 일치하는 Trigger을 만들어 주고 Transition 에 Conditions에 추가해줘야 함
 
-
-
-
-
 4/19
 
 Starter Assets - Third Person Character Controller를 사용하여 Unity에서 미니맵을 만들 수 있습니다. 미니맵은 플레이어의 위치와 주변 환경을 간단하게 나타내는 작은 지도입니다. 이를 구현하기 위해 아래의 단계를 따라주세요.
@@ -173,3 +169,60 @@ Starter Assets - Third Person Character Controller를 사용하여 Unity에서 �
    - 'Rect Transform'에서 'Pos X' 및 'Pos Y' 값을 조절하여 미니맵이 화면 오른쪽 하단에 적절한 위치에 놓이도록 설정합니다. 예를 들어, 'Pos X'를 -20, 'Pos Y'를 20으로 설정하면 오른쪽 하단에서 20 픽셀 떨어진 위치에 미니맵이 표시됩니다.
 
 이제 미니맵이 화면 오른쪽 하단에 위치하게 됩니다. 더 나은 사용자 경험을 위해 미니맵의 크기 및 위치를 추가로 조절할 수 있습니다.
+
+
+
+
+
+## 4/20
+
+# 노래 바꾸기
+
+Unity에서 각 LP 판을 클릭하면 노래를 바꿔 틀도록 설정하려면 다음 단계를 따르세요:
+
+1. 각 LP 판 게임 오브젝트에 콜라이더(Collider)를 추가하세요. 이를 통해 클릭 이벤트를 감지할 수 있습니다.
+2. 각 LP 판에 AudioSource 컴포넌트를 추가하고, 각 AudioSource의 AudioClip 속성에 대응하는 노래를 할당하세요.
+3. LP 판 게임 오브젝트에 아래와 같은 스크립트를 추가하세요. 이 스크립트는 클릭 이벤트를 처리하고, 노래를 바꿔 틀어줍니다.
+
+```csharp
+csharpCopy code
+using UnityEngine;
+
+public class LpClickHandler : MonoBehaviour
+{
+    private AudioSource audioSource;
+
+    private void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
+
+    private void OnMouseDown()
+    {
+        // 다른 LP 판들의 노래를 정지
+        GameObject[] lpObjects = GameObject.FindGameObjectsWithTag("LP");
+        foreach (GameObject lp in lpObjects)
+        {
+            AudioSource lpAudioSource = lp.GetComponent<AudioSource>();
+            if (lpAudioSource != audioSource && lpAudioSource.isPlaying)
+            {
+                lpAudioSource.Stop();
+            }
+        }
+
+        // 이 LP 판의 노래를 틀거나 정지
+        if (audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
+        else
+        {
+            audioSource.Play();
+        }
+    }
+}
+```
+
+1. LP 판 게임 오브젝트에 'LP' 태그를 할당하세요. 이렇게 하면 스크립트에서 다른 LP 판들의 노래를 정지할 수 있습니다.
+   
+   이제 각 LP 판을 클릭할 때마다 노래가 바뀌어 재생됩니다. 한 번에 한 개의 노래만 틀어지도록 설정되어 있으며, 동일한 LP 판을 다시 클릭하면 노래가 정지합니다.
