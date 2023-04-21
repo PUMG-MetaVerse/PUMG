@@ -18,3 +18,7 @@
 2023-04-20
 - Photon Network 멀티플레이 구현
 - Photon Network 멀티플레이 info 동기화
+
+2023-04-21
+- Plastic SCM 테스트
+- Plastic SCM INIT 및 공유
