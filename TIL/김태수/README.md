@@ -9,3 +9,16 @@
 - 나만의 캐릭터 fbx 추출
 - .fbx파일 Unity서버에서의 동작 확인 및 테스트
 -Unity 학습 진행
+
+2023-04-19
+- Photon Network 학습
+- Photon Network 구현
+- Photon Network 테스트
+
+2023-04-20
+- Photon Network 멀티플레이 구현
+- Photon Network 멀티플레이 info 동기화
+
+2023-04-21
+- Plastic SCM 테스트
+- Plastic SCM INIT 및 공유
