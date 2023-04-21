@@ -170,10 +170,6 @@ Starter Assets - Third Person Character Controller를 사용하여 Unity에서 �
 
 이제 미니맵이 화면 오른쪽 하단에 위치하게 됩니다. 더 나은 사용자 경험을 위해 미니맵의 크기 및 위치를 추가로 조절할 수 있습니다.
 
-
-
-
-
 ## 4/20
 
 # 노래 바꾸기
@@ -226,3 +222,70 @@ public class LpClickHandler : MonoBehaviour
 1. LP 판 게임 오브젝트에 'LP' 태그를 할당하세요. 이렇게 하면 스크립트에서 다른 LP 판들의 노래를 정지할 수 있습니다.
    
    이제 각 LP 판을 클릭할 때마다 노래가 바뀌어 재생됩니다. 한 번에 한 개의 노래만 틀어지도록 설정되어 있으며, 동일한 LP 판을 다시 클릭하면 노래가 정지합니다.
+
+## 4/21
+
+# 캠프파이어
+
+캠프파이어를 구현하려면, 불의 크기를 조절할 수 있는 스크립트를 작성하고, 플레이어가 장작을 불에 추가할 수 있는 인터랙션을 만들어야 합니다. 아래 예제 코드를 참고해 주세요.
+
+1. 캠프파이어 불의 크기를 조절하는 스크립트를 작성합니다.
+
+```
+csharpCopy code
+using UnityEngine;
+
+public class Campfire : MonoBehaviour
+{
+    public int maxFireLevel = 10;
+    public float fireGrowthAmount = 0.1f;
+    private int currentFireLevel = 0;
+    private Vector3 initialScale;
+
+    private void Start()
+    {
+        initialScale = transform.localScale;
+    }
+
+    public void AddFirewood()
+    {
+        if (currentFireLevel < maxFireLevel)
+        {
+            currentFireLevel++;
+            transform.localScale += new Vector3(fireGrowthAmount, fireGrowthAmount, fireGrowthAmount);
+        }
+    }
+}
+```
+
+1. 플레이어가 장작을 캠프파이어에 추가할 수 있도록 하는 스크립트를 작성합니다.
+
+```
+csharpCopy code
+using UnityEngine;
+
+public class PlayerInteraction : MonoBehaviour
+{
+    public int firewoodAmount = 10;
+    private Campfire campfire;
+
+    private void Start()
+    {
+        campfire = FindObjectOfType<Campfire>();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.E) && firewoodAmount > 0)
+        {
+            firewoodAmount--;
+            campfire.AddFirewood();
+            Debug.Log("Firewood added to the campfire.");
+        }
+    }
+}
+```
+
+이 코드에서 **`Campfire`** 스크립트는 캠프파이어 불 게임 오브젝트에 추가되어야 합니다. 그리고 **`PlayerInteraction`** 스크립트는 플레이어 게임 오브젝트에 추가되어야 합니다.
+
+플레이어가 'E' 키를 누를 때마다 장작을 하나씩 사용하여 캠프파이어 불의 크기가 커집니다. **`fireGrowthAmount`** 변수를 조절하여 불이 얼마나 커지는지 조절할 수 있습니다. 또한, **`maxFireLevel`** 변수를 조절하여 최대 불의 크기 단계를 변경할 수 있습니다.
