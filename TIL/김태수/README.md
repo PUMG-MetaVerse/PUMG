@@ -10,12 +10,11 @@
 - .fbx파일 Unity서버에서의 동작 확인 및 테스트
 -Unity 학습 진행
 
-2024-04-17
-- 월드 스토리 확정
-- 방탈출 스토리 회의
-- Unity 명세서 학습
+2023-04-19
+- Photon Network 학습
+- Photon Network 구현
+- Photon Network 테스트
 
-2024-04-18
-- 포탈 관련 명세서 학습
-- 포탈 구현
-- 포탈 테스트
+2023-04-20
+- Photon Network 멀티플레이 구현
+- Photon Network 멀티플레이 info 동기화
