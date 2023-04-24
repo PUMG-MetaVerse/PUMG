@@ -6,7 +6,6 @@
 
 - 유니티 셋업 학습
 
-
 ## 4/14
 
 - 뱡향, 점프, 회피 만들기
@@ -290,3 +289,55 @@ public class PlayerInteraction : MonoBehaviour
 이 코드에서 **`Campfire`** 스크립트는 캠프파이어 불 게임 오브젝트에 추가되어야 합니다. 그리고 **`PlayerInteraction`** 스크립트는 플레이어 게임 오브젝트에 추가되어야 합니다.
 
 플레이어가 'E' 키를 누를 때마다 장작을 하나씩 사용하여 캠프파이어 불의 크기가 커집니다. **`fireGrowthAmount`** 변수를 조절하여 불이 얼마나 커지는지 조절할 수 있습니다. 또한, **`maxFireLevel`** 변수를 조절하여 최대 불의 크기 단계를 변경할 수 있습니다.
+
+## 04/24
+
+```csharp
+//10초마다 밤 바뀌는거
+
+using UnityEngine;
+
+public class DayNightController : MonoBehaviour
+{
+    public GameObject sunLightObject;
+    public Material daySkybox;
+    public Material nightSkybox;
+    public float dayLength = 10f;
+
+    private Light sunLight;
+    private float currentTime;
+    private float lerpValue;
+
+    void Start()
+    {
+        currentTime = 0;
+        sunLight = sunLightObject.GetComponent<Light>();
+        RenderSettings.skybox = daySkybox;
+    }
+
+    void Update()
+    {
+        currentTime += Time.deltaTime;
+        lerpValue = Mathf.Sin(currentTime / dayLength * Mathf.PI * 2);
+        lerpValue = (lerpValue + 1) / 2;
+
+        sunLight.transform.rotation = Quaternion.Euler(new Vector3(360 * lerpValue, 0, 0)); // Directional Light의 회전을 변경하여 낮과 밤을 전환합니다.
+
+        if (lerpValue > 0.5f)
+        {
+            if (RenderSettings.skybox != daySkybox)
+            {
+                RenderSettings.skybox = daySkybox;
+            }
+        }
+        else
+        {
+            if (RenderSettings.skybox != nightSkybox)
+            {
+                RenderSettings.skybox = nightSkybox;
+            }
+        }
+        DynamicGI.UpdateEnvironment();
+    }
+}
+```
