@@ -36,8 +36,8 @@ public class User extends BaseEntity {
     @Column(name = "title")
     private String title;
 
-    public void addReview(long star) {
-
+    public void modifyNickname(String nickName) {
+        this.nickName = nickName;
     }
 
 }
