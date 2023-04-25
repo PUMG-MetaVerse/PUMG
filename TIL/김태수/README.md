@@ -22,3 +22,14 @@
 2023-04-21
 - Plastic SCM 테스트
 - Plastic SCM INIT 및 공유
+
+2023-04-23
+- Plastic SCM 머지 및 팀원 추가
+- Plastic SCM 형상관리 전달
+
+2023-04-24
+-Spring Todolist API 명세 구현
+
+2023-04-25
+-Healing Section 낮과 밤 테스트
+-Healing Section 까지의 포탈 버그 픽스 및 메인 월드와의 연결
