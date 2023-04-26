@@ -33,3 +33,7 @@
 2023-04-25
 -Healing Section 낮과 밤 테스트
 -Healing Section 까지의 포탈 버그 픽스 및 메인 월드와의 연결
+
+2023-04-26
+-Healing Section 낮과 밤 오브젝트 분리 및 렌더링 개선
+-Healing Section 바다 물리엔진 추가 및 수영 컨텐츠 도입
