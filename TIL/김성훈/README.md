@@ -370,19 +370,19 @@ character.tag = "Player";
 4. 스크립트 기능 구현:
     - 스크립트를 더블 클릭하여 코드 에디터에서 엽니다.
     - 아래 코드를 참조하여 스크립트를 작성하고, 기능을 구현합니다. 이 코드는 의자와 충돌 감지, 'V' 키 입력 처리, 플레이어를 의자에 앉게 하고, 낚시대를 손에 부착하는 기능을 포함합니다.
-    
+
     ```csharp
     using UnityEngine;
-    
+
     public class FishingController : MonoBehaviour
     {
         public GameObject chair;
         public GameObject fishingRod;
         public Transform handPosition;
-    
+
         private bool isNearChair = false;
         private bool isSitting = false;
-    
+
         void Update()
         {
             if (isNearChair && Input.GetKeyDown(KeyCode.V))
@@ -397,43 +397,114 @@ character.tag = "Player";
                 }
             }
         }
-    
+
         void OnTriggerEnter(Collider other)
         {
             if (other.gameObject == chair)
             {
                 isNearChair = true;
             }
-    	}
-    	
-    	    void OnTriggerExit(Collider other)
-    	    {
-    	        if (other.gameObject == chair)
-    	        {
-    	            isNearChair = false;
-    	        }
-    	    }
-    	
-    	    private void SitOnChair()
-    	    {
-    	        isSitting = true;
-    	        transform.position = chair.transform.position; // 플레이어를 의자의 위치로 이동시킵니다.
-    	        transform.rotation = chair.transform.rotation; // 플레이어의 회전을 의자의 회전과 일치시킵니다.
-    	
-    	        fishingRod.transform.SetParent(handPosition); // 낚시대를 플레이어의 손 위치에 부착시킵니다.
-    	        fishingRod.transform.localPosition = Vector3.zero; // 낚시대의 로컬 위치를 초기화합니다.
-    	        fishingRod.transform.localRotation = Quaternion.identity; // 낚시대의 로컬 회전을 초기화합니다.
-    	    }
-    	
-    	    private void StandUpFromChair()
-    	    {
-    	        isSitting = false;
-    	        transform.position = chair.transform.position + Vector3.up * 2f; // 플레이어를 의자에서 일어난 위치로 이동시킵니다.
-    	
-    	        fishingRod.transform.SetParent(null); // 낚시대의 부모를 제거하여 플레이어의 손에서 분리합니다.
-    	    }
-    	}
+        }
+
+            void OnTriggerExit(Collider other)
+            {
+                if (other.gameObject == chair)
+                {
+                    isNearChair = false;
+                }
+            }
+
+            private void SitOnChair()
+            {
+                isSitting = true;
+                transform.position = chair.transform.position; // 플레이어를 의자의 위치로 이동시킵니다.
+                transform.rotation = chair.transform.rotation; // 플레이어의 회전을 의자의 회전과 일치시킵니다.
+
+                fishingRod.transform.SetParent(handPosition); // 낚시대를 플레이어의 손 위치에 부착시킵니다.
+                fishingRod.transform.localPosition = Vector3.zero; // 낚시대의 로컬 위치를 초기화합니다.
+                fishingRod.transform.localRotation = Quaternion.identity; // 낚시대의 로컬 회전을 초기화합니다.
+            }
+
+            private void StandUpFromChair()
+            {
+                isSitting = false;
+                transform.position = chair.transform.position + Vector3.up * 2f; // 플레이어를 의자에서 일어난 위치로 이동시킵니다.
+
+                fishingRod.transform.SetParent(null); // 낚시대의 부모를 제거하여 플레이어의 손에서 분리합니다.
+            }
+        }
     ```
-    
+
     이 코드를 추가하면 플레이어가 의자에 앉고 일어서는 것과 낚시대를 손에 붙였다 뗐다 하는 것을 구현할 수 있습니다. 이제 Unity 에디터에서 플레이어와 의자, 낚시대 게임 오브젝트를 적절히 배치하고 테스트해보세요.
+```
+
+## 4/28
+
+### ㅇㅏㄵ는 애니메이션 적용 코드
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ChairInteract : MonoBehaviour
+{
+    public bool isSitting;
+    public bool isInRange;
+    public GameObject player;
+    public string playerTag = "Player";
+    public KeyCode interactKey = KeyCode.H;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            Debug.Log("Player entered trigger range.");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            Debug.Log("Player left trigger range.");
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            Debug.Log("Interact key pressed.");
+            if (!isSitting)
+            {
+                Sit();
+            }
+            else
+            {
+                Stand();
+            }
+        }
+    }
+
+    private void Sit()
+    {
+        isSitting = true;
+        player.GetComponent<Animator>().SetTrigger("IsSitting");
+        Debug.Log("Sit triggered.");
+        // 다른 필요한 동작을 추가하세요 (예: 플레이어 위치 조정)
+    }
+
+    private void Stand()
+    {
+        isSitting = false;
+        player.GetComponent<Animator>().SetTrigger("IsStanding");
+        Debug.Log("Stand triggered.");
+        // 다른 필요한 동작을 추가하세요 (예: 플레이어 위치 조정)
+    }
+}
 ```
