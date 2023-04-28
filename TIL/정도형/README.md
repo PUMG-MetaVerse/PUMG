@@ -179,3 +179,122 @@ public class PhotonManager : MonoBehaviourPunCallbacks
     }
 }
 
+## 2023-04-28
+- 파티 플레이를 위한 포톤 네트워킹 작업 진행 중
+- Room에 이미 참여하여 멀티플레이 진행 중이라 Room을 새로 생성할 수 없기 때문에 다른 통신 방법 활용해야 함
+using UnityEngine;
+using Photon.Pun;
+using Photon.Realtime;
+using ExitGames.Client.Photon;
+using System.Collections.Generic;
+
+public class PartyManager : MonoBehaviourPunCallbacks, IOnEventCallback
+{
+    private const byte PartyInviteEventCode = 1;
+    private const byte PartyJoinEventCode = 2;
+
+    private Dictionary<int, string> partyMembers = new Dictionary<int, string>();
+    private Dictionary<string, int> playerNameToActorNumber = new Dictionary<string, int>();
+
+
+    private void Awake()
+    {
+        PhotonNetwork.AutomaticallySyncScene = true;
+    }
+
+    public void Connect()
+    {
+        if (!PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.ConnectUsingSettings();
+        }
+    }
+
+    public override void OnConnectedToMaster()
+    {
+        // Debug.Log("Connected to Master Server.");
+        // PhotonNetwork.LocalPlayer.NickName = "Player_" + Random.Range(1000, 9999);
+    }
+
+    public void InvitePlayerToParty(int targetPlayerId)
+    {
+        if (PhotonNetwork.IsConnected)
+        {
+            object[] content = new object[] { PhotonNetwork.LocalPlayer.ActorNumber, PhotonNetwork.LocalPlayer.NickName };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { TargetActors = new[] { targetPlayerId } };
+            SendOptions sendOptions = new SendOptions { Reliability = true };
+            PhotonNetwork.RaiseEvent(PartyInviteEventCode, content, raiseEventOptions, sendOptions);
+        }
+    }
+
+    public void JoinParty(int inviterPlayerId, string inviterPlayerName)
+    {
+        if (PhotonNetwork.IsConnected)
+        {
+            object[] content = new object[] { PhotonNetwork.LocalPlayer.ActorNumber, PhotonNetwork.LocalPlayer.NickName };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { TargetActors = new[] { inviterPlayerId } };
+            SendOptions sendOptions = new SendOptions { Reliability = true };
+            PhotonNetwork.RaiseEvent(PartyJoinEventCode, content, raiseEventOptions, sendOptions);
+
+            partyMembers[inviterPlayerId] = inviterPlayerName;
+        }
+    }
+
+    public void OnEvent(EventData photonEvent)
+    {
+        if (photonEvent.Code == PartyInviteEventCode)
+        {
+            object[] data = (object[])photonEvent.CustomData;
+            int inviterId = (int)data[0];
+            string inviterName = (string)data[1];
+            Debug.Log($"Received a party invitation from {inviterName} ({inviterId})");
+
+            // Automatically join the party when an invitation is received.
+            JoinParty(inviterId, inviterName);
+        }
+        else if (photonEvent.Code == PartyJoinEventCode)
+        {
+            object[] data = (object[])photonEvent.CustomData;
+            int joinerId = (int)data[0];
+            string joinerName = (string)data[1];
+            Debug.Log($"{joinerName} ({joinerId}) has joined the party");
+
+            partyMembers[joinerId] = joinerName;
+        }
+    }
+
+    public void PrintPartyMembers()
+    {
+        Debug.Log("Current Party Members:");
+        foreach (KeyValuePair<int, string> member in partyMembers)
+        {
+            Debug.Log($"{member.Value} ({member.Key})");
+        }
+    }
+
+    public void LeaveParty()
+    {
+        partyMembers.Clear();
+        Debug.Log("Left the party.");
+    }
+    private void UpdatePlayerList()
+    {
+        playerNameToActorNumber.Clear();
+        foreach (Player player in PhotonNetwork.PlayerListOthers)
+        {
+            playerNameToActorNumber[player.NickName] = player.ActorNumber;
+        }
+    }
+    public void InvitePlayerToPartyByNickname(string targetPlayerNickname)
+    {
+        if (playerNameToActorNumber.TryGetValue(targetPlayerNickname, out int targetPlayerId))
+        {
+            InvitePlayerToParty(targetPlayerId);
+        }
+        else
+        {
+            Debug.LogError($"Player with nickname {targetPlayerNickname} not found.");
+        }
+    }
+
+}
