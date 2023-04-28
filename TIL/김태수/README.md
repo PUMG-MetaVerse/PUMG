@@ -115,3 +115,53 @@ public class HealingWater : MonoBehaviour
     }
 }
 ```
+
+2023-04-28
+-HealingSecion Swimming 상호작용 추가 및 구현
+-HealingSecion Swimming 조건 구성 및 개조
+
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class HealingInteraction : MonoBehaviour
+{
+    private Animator animator;
+    public LayerMask waterLayer;
+    private bool isSwimming = false;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingEnter();
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingExit();
+        }
+    }
+
+    void OnSwimmingEnter()
+    {
+        isSwimming = true;
+        animator.SetBool("IsSwimming", true);
+    }
+
+    void OnSwimmingExit()
+    {
+        isSwimming = false;
+        animator.SetBool("IsSwimming", false);
+    }
+}
+```
