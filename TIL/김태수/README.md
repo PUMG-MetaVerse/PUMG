@@ -28,20 +28,20 @@
 - Plastic SCM 형상관리 전달
 
 2023-04-24
--Spring Todolist API 명세 구현
+- Spring Todolist API 명세 구현
 
 2023-04-25
--Healing Section 낮과 밤 테스트
--Healing Section 까지의 포탈 버그 픽스 및 메인 월드와의 연결
+- Healing Section 낮과 밤 테스트
+- Healing Section 까지의 포탈 버그 픽스 및 메인 월드와의 연결
 
 2023-04-26
--Healing Section 낮과 밤 오브젝트 분리 및 렌더링 개선
--Healing Section 바다 물리엔진 추가 및 수영 컨텐츠 도입
+- Healing Section 낮과 밤 오브젝트 분리 및 렌더링 개선
+- Healing Section 바다 물리엔진 추가 및 수영 컨텐츠 도입
 
 2023-04-27
--Healing Section 바다 Post-Proccessing 구현
--Healing Section 수영 모션 애미매이션 추가
--Healing Section 수영 모션 애미매이션 테스트
+- Healing Section 바다 Post-Proccessing 구현
+- Healing Section 수영 모션 애미매이션 추가
+- Healing Section 수영 모션 애미매이션 테스트
 ```C#
 using System.Collections;
 using System.Collections.Generic;
@@ -117,8 +117,8 @@ public class HealingWater : MonoBehaviour
 ```
 
 2023-04-28
--HealingSecion Swimming 상호작용 추가 및 구현
--HealingSecion Swimming 조건 구성 및 개조
+- HealingSecion Swimming 상호작용 추가 및 구현
+- HealingSecion Swimming 조건 구성 및 개조
 
 ```C#
 using System.Collections;
@@ -165,3 +165,10 @@ public class HealingInteraction : MonoBehaviour
     }
 }
 ```
+
+
+2023-05-01
+- HealingSecion Fishing 상호작용 추가 및 구현
+- HealingSecion 랜더링 개선
+- 오큘러전 컬링 그룹군 적용 및 개선
+- 수중 부력 물리개념 추가
