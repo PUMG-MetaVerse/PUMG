@@ -1,5 +1,9 @@
 # TIL
 
+## 2023-05-04
+
+- Unity Cinematic을 사용한 방탈출 인트로 영상 제작
+
 ## 2023-05-03
 
 - Unity Cinematic 자료조사
