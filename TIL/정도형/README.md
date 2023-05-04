@@ -1052,3 +1052,39 @@ public class PhotonManager_RoomEscape : MonoBehaviourPunCallbacks
     }
 
 }
+
+## 2023-05-04
+- NPC Random 이동 테스트 (Nav Mesh 사용)
+using UnityEngine;
+using UnityEngine.AI;
+
+public class MoveToRandomTarget : MonoBehaviour
+{
+    public float wanderRadius = 10f;
+    public float wanderInterval = 3f;
+    private NavMeshAgent agent;
+    private float timer;
+
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        timer = wanderInterval;
+    }
+
+    void Update()
+    {
+        timer += Time.deltaTime;
+
+        if (timer >= wanderInterval)
+        {
+            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
+            randomDirection += transform.position;
+            NavMeshHit navMeshHit;
+            if (NavMesh.SamplePosition(randomDirection, out navMeshHit, wanderRadius, 1))
+            {
+                agent.SetDestination(navMeshHit.position);
+            }
+            timer = 0;
+        }
+    }
+}
