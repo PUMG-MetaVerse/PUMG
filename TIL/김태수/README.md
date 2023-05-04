@@ -172,3 +172,101 @@ public class HealingInteraction : MonoBehaviour
 - HealingSecion 랜더링 개선
 - 오큘러전 컬링 그룹군 적용 및 개선
 - 수중 부력 물리개념 추가
+
+2023-05-04
+- HealingSection 캠프파이어 추가
+- HealingSection 캠프파이어 오디오 
+    - Player와의 거리에따라 오디오 음성 불룜 조절
+- HealingSection 키고 끄기 상호작용
+
+```C#
+using UnityEngine;
+using Photon.Pun;
+
+public class FireInteraction : MonoBehaviourPunCallbacks
+{
+    public GameObject fireEffect; // 불 효과를 참조할 GameObject 변수
+    public float interactionDistance = 3f; // 상호작용 거리
+    private ParticleSystem fireParticleSystem; // Particle System 컴포넌트를 저장할 변수
+    public Light firePointLight; // 불 주변의 조명을 담당하는 포인트 라이트
+    private AudioSource audioSource; // 오디오 소스 컴포넌트를 참조하는 변수
+
+    public float minDistance = 3.0f; // 오디오가 최대 볼륨으로 들리기 시작하는 거리
+    public float maxDistance = 10.0f; // 오디오가 완전히 들리지 않게 되는 거리
+
+    private void Start()
+    {
+        fireParticleSystem = fireEffect.GetComponent<ParticleSystem>(); // 불 효과의 Particle System을 참조
+        audioSource = GetComponent<AudioSource>(); // 오디오 소스 컴포넌트 가져오기
+        // audioSource.volume = 0.0f;
+    }
+
+    private void Update()
+    {
+        // 로컬 플레이어만 조작 가능하도록 함
+        if (!photonView.IsMine) return;
+
+        // 원 범위 내의 모든 콜라이더를 가져옵니다 (레이어 마스크를 사용하여 Player 레이어만 탐지하도록 함)
+        int layerMask = 1 << LayerMask.NameToLayer("Player");
+        Collider[] colliders = Physics.OverlapSphere(transform.position, interactionDistance, layerMask);
+
+        // 가장 가까운 플레이어를 찾습니다
+        GameObject closestPlayer = null;
+        float closestDistance = Mathf.Infinity;
+        foreach (Collider collider in colliders)
+        {
+            float distance = Vector3.Distance(transform.position, collider.transform.position);
+            if (distance < closestDistance)
+            {
+                closestPlayer = collider.gameObject;
+                closestDistance = distance;
+            }
+        }
+
+        if (closestPlayer != null)
+        {
+            Debug.Log("Closest Player");
+
+            float distance = Vector3.Distance(transform.position, closestPlayer.transform.position);
+
+            // 거리에 따라 오디오 소스의 볼륨을 조절합니다.
+            if (distance <= minDistance)
+            {
+                audioSource.volume = 1.0f;
+            }
+            else if (distance <= maxDistance)
+            {
+                float t = (distance - minDistance) / (maxDistance - minDistance);
+                audioSource.volume = 1.0f - t;
+            }
+            else
+            {
+                audioSource.volume = 0.0f;
+            }
+
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                Debug.Log("Toggle Fire");
+                photonView.RPC("ToggleFire", RpcTarget.All); // 모든 클라이언트에서 불 효과를 끄거나 켭니다
+            }
+        }
+        else
+        {
+            audioSource.volume = 0.0f; // 플레이어가 멀리 떨어진 경우 볼륨을 0으로 설정합니다.
+        }
+    }
+
+    [PunRPC]
+    private void ToggleFire()
+    {
+        if (fireParticleSystem.isPlaying)
+        {
+            fireParticleSystem.Stop(); // 불 효과 중지      
+        }
+        else
+        {
+            fireParticleSystem.Play(); // 불 효과 재생
+        }
+    }
+}
+```
