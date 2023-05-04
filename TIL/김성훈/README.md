@@ -632,3 +632,265 @@ public class ChairInteract : MonoBehaviour
     }
 }
 ```
+
+### 5/2
+
+```C
+using System.Collections;
+using UnityEngine;
+using StarterAssets;
+
+public class LayDownGetUp : MonoBehaviour
+{
+    public bool isLayDown;
+    public bool isInRange;
+    private GameObject player;
+    private string playerTag = "Player";
+    private KeyCode interactKey = KeyCode.H;
+    public Transform layDownPosition;
+    public CharacterController playerController;
+    public ThirdPersonController thirdPersonControllerScript;
+    // public Vector3 layDownLocalOffset;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            playerController = player.GetComponent<CharacterController>();
+            thirdPersonControllerScript = player.GetComponent<ThirdPersonController>();
+            Debug.Log("lounger");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            playerController = null;
+            Debug.Log("loungerout");
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            if (!isLayDown)
+            {
+                LayDown();
+            }
+            else
+            {
+                GetUp();
+            }
+        }
+    }
+
+    private void LayDown()
+    {
+        isLayDown = true;
+        player.GetComponent<Animator>().SetBool("IsLayDown", true);
+
+        // 로컬 오프셋을 적용한 위치 계산
+        // Vector3 layDownPositionWithOffset = layDownPosition.TransformPoint(layDownLocalOffset);
+
+        player.transform.position = layDownPosition.position;
+        player.transform.rotation = layDownPosition.rotation;
+        playerController.enabled = false;
+        thirdPersonControllerScript.isSitting = true; 
+    }
+
+    private void GetUp()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        isLayDown = false;
+        player.GetComponent<Animator>().SetBool("IsLayDown", false);
+        playerController.enabled = true;
+        thirdPersonControllerScript.isSitting = false; 
+    }
+}
+```
+
+## 5/3
+
+## 클럽
+
+```csharp
+using UnityEngine;
+using TMPro;
+using System.Collections;
+
+public class DanceZone : MonoBehaviour
+{
+    private Animator playerAnimator;
+    private bool playerInZone = false;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = true;
+            playerAnimator = other.GetComponent<Animator>();
+            if (playerAnimator == null)
+            {
+                Debug.LogError("Player Animator component is not found.");
+            }
+            Debug.Log("Player entered the dance zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = false;
+            playerAnimator = null;
+        }
+    }
+
+    void Update()
+    {
+        if (playerInZone)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                playerAnimator.SetTrigger("Dance1");
+                Debug.Log("Player pressed key 1 to dance.");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                playerAnimator.SetTrigger("Dance2");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                playerAnimator.SetTrigger("Dance3");
+            }
+        }
+    }
+}
+
+```
+
+```csharp
+using UnityEngine;
+
+public class ClubEntrance : MonoBehaviour
+{
+    public AudioSource mapAudioSource;
+    public AudioSource clubAudioSource;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Pause();
+            clubAudioSource.Play();
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Play();
+            clubAudioSource.Pause();
+        }
+    }
+}
+
+```
+
+```csharp
+using UnityEngine;
+using System.Collections;
+
+public class CDPlayer : MonoBehaviour
+{
+    public AudioClip audioClip;
+    private bool playerInRange = false;
+    private AudioSource clubAudioSource;
+    private AudioClip originalClip;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            Debug.Log("Player entered the CD player zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            Debug.Log("Player exited the CD player zone.");
+        }
+    }
+
+    void Update()
+    {
+        if (playerInRange && Input.GetKeyDown(KeyCode.H))
+        {
+            ChangeSong();
+            Debug.Log("Player pressed H to change the song.");
+        }
+    }
+
+    private void ChangeSong()
+    {
+        if (audioClip != null)
+        {
+            if (clubAudioSource == null)
+            {
+                GameObject clubMusicObject = GameObject.FindGameObjectWithTag("ClubMusic");
+                if (clubMusicObject != null)
+                {
+                    clubAudioSource = clubMusicObject.GetComponent<AudioSource>();
+                    originalClip = clubAudioSource.clip;
+                }
+                else
+                {
+                    Debug.LogError("ClubMusic object not found.");
+                }
+            }
+
+            if (clubAudioSource != null)
+            {
+                clubAudioSource.clip = audioClip;
+                clubAudioSource.Play();
+                StartCoroutine(PlayOriginalClipAfterDelay(audioClip.length));
+            }
+            else
+            {
+                Debug.LogError("Club AudioSource not found.");
+            }
+        }
+        else
+        {
+            Debug.LogError("AudioClip is not assigned.");
+        }
+    }
+
+    private IEnumerator PlayOriginalClipAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        clubAudioSource.clip = originalClip;
+        clubAudioSource.Play();
+    }
+}
+
+```
+
+```csharp
+
+```
