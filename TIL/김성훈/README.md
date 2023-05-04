@@ -776,7 +776,6 @@ public class DanceZone : MonoBehaviour
         }
     }
 }
-
 ```
 
 ```csharp
@@ -805,7 +804,6 @@ public class ClubEntrance : MonoBehaviour
         }
     }
 }
-
 ```
 
 ```csharp
@@ -888,9 +886,78 @@ public class CDPlayer : MonoBehaviour
         clubAudioSource.Play();
     }
 }
-
 ```
 
 ```csharp
+
+```
+
+### 5/4
+
+```csharp
+using UnityEngine;
+
+public class LaserBeams : MonoBehaviour
+{
+    public int numberOfLasers = 6;
+    public float laserRange = 50f;
+    public float laserStartWidth = 0.3f;
+    public float laserEndWidth = 0.1f;
+    public float startAngle = 45f; // 부채꼴 시작 각도
+    public float endAngle = 135f; // 부채꼴 끝 각도
+    public Color[] laserColors = { Color.blue, Color.green, Color.cyan, Color.blue, Color.green, Color.cyan };
+
+    private LineRenderer[] lineRenderers;
+    private float[] flickerTimers;
+
+    void Start()
+    {
+        lineRenderers = new LineRenderer[numberOfLasers];
+        flickerTimers = new float[numberOfLasers];
+
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            GameObject laser = new GameObject($"Laser_{i}");
+            laser.transform.SetParent(transform);
+            lineRenderers[i] = laser.AddComponent<LineRenderer>();
+            lineRenderers[i].startWidth = laserStartWidth;
+            lineRenderers[i].endWidth = laserEndWidth;
+            lineRenderers[i].material = new Material(Shader.Find("Sprites/Default"));
+            Color semiTransparentColor = laserColors[i % laserColors.Length];
+            semiTransparentColor.a = 0.5f;
+            lineRenderers[i].material.color = semiTransparentColor;
+            lineRenderers[i].sortingOrder = 1;
+            flickerTimers[i] = Random.Range(1f, 0.8f);
+        }
+    }
+
+    void Update()
+    {
+        float angleRange = endAngle - startAngle;
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            float angle = startAngle + (angleRange / (numberOfLasers - 1)) * i;
+            Vector3 direction = Quaternion.Euler(0, 0, angle) * transform.up;
+
+            lineRenderers[i].SetPosition(0, transform.position);
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, laserRange);
+            if (hit.collider != null)
+            {
+                lineRenderers[i].SetPosition(1, hit.point);
+            }
+            else
+            {
+                lineRenderers[i].SetPosition(1, transform.position + direction * laserRange);
+            }
+
+            flickerTimers[i] -= Time.deltaTime;
+            if (flickerTimers[i] <= 0)
+            {
+                lineRenderers[i].enabled = !lineRenderers[i].enabled;
+                flickerTimers[i] = Random.Range(0.2f, 0.8f);
+            }
+        }
+    }
+}
 
 ```
