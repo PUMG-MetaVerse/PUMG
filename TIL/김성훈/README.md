@@ -508,3 +508,389 @@ public class ChairInteract : MonoBehaviour
     }
 }
 ```
+
+## 5/1
+
+```C#
+//최종본
+using System.Collections;
+using UnityEngine;
+using StarterAssets;
+
+public class ChairInteract : MonoBehaviour
+{
+    public bool isSitting;
+    public bool isInRange;
+    public GameObject player;
+    public string playerTag = "Player";
+    public KeyCode interactKey = KeyCode.H;
+    public Transform sitPosition;
+    public CharacterController playerController;
+    public ThirdPersonController thirdPersonControllerScript;
+    public KeyCode throwKey = KeyCode.T;
+    public Transform playerHands;
+    public string fishingPoleName = "Fishing-pole";
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            playerController = player.GetComponent<CharacterController>();
+            thirdPersonControllerScript = player.GetComponent<ThirdPersonController>();
+            // playerHands = player.transform.Find("Mesh/Body/Hands");
+            playerHands = player.transform.Find("Armature/Root_M/Spine1_M/Spine2_M/Chest_M/Scapula_L/Shoulder_L/Elbow_L/Wrist_L");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            playerController = null;
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            if (!isSitting)
+            {
+                Sit();
+            }
+            else
+            {
+                Stand();
+            }
+        }
+
+        if (Input.GetKeyDown(throwKey) && isSitting)
+        {
+            Animator animator = player.GetComponent<Animator>();
+            bool isThrowing = animator.GetBool("isThrowing");
+
+            if (!isThrowing)
+            {
+                animator.SetBool("isThrowing", true);
+            }
+            else
+            {
+                animator.SetBool("isThrowing", false);
+            }
+        }
+    }
+
+    private void Sit()
+    {
+        isSitting = true;
+        player.GetComponent<Animator>().SetTrigger("IsSitting");
+        player.transform.position = sitPosition.position;
+        player.transform.rotation = sitPosition.rotation;
+        playerController.enabled = false;
+        thirdPersonControllerScript.isSitting = true;
+
+        Transform fishingPole = transform.Find(fishingPoleName);
+        if (fishingPole != null)
+        {
+            fishingPole.SetParent(playerHands);
+            fishingPole.localPosition = new Vector3(0.09f, -0.02f, 0.07f);
+            fishingPole.localRotation = Quaternion.Euler(39f, 82f, -185f);
+        }
+        else
+        {
+            Debug.LogError("Fishing-pole not found as a child of the chair object.");
+        }
+    }
+
+    private void Stand()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        isSitting = false;
+        player.GetComponent<Animator>().SetTrigger("IsStanding");
+        playerController.enabled = true;
+        thirdPersonControllerScript.isSitting = false;
+
+        Transform fishingPoleInHand = playerHands.Find(fishingPoleName);
+        if (fishingPoleInHand != null)
+        {
+            fishingPoleInHand.SetParent(transform);
+            fishingPoleInHand.position = playerHands.position;
+            fishingPoleInHand.rotation = playerHands.rotation;
+            fishingPoleInHand.localRotation = Quaternion.Euler(0, 0, 0);
+
+            Vector3 offset = playerHands.transform.forward * 0.25f;
+            fishingPoleInHand.position += offset;
+        }
+    }
+}
+```
+
+### 5/2
+
+```C
+using System.Collections;
+using UnityEngine;
+using StarterAssets;
+
+public class LayDownGetUp : MonoBehaviour
+{
+    public bool isLayDown;
+    public bool isInRange;
+    private GameObject player;
+    private string playerTag = "Player";
+    private KeyCode interactKey = KeyCode.H;
+    public Transform layDownPosition;
+    public CharacterController playerController;
+    public ThirdPersonController thirdPersonControllerScript;
+    // public Vector3 layDownLocalOffset;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            playerController = player.GetComponent<CharacterController>();
+            thirdPersonControllerScript = player.GetComponent<ThirdPersonController>();
+            Debug.Log("lounger");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            playerController = null;
+            Debug.Log("loungerout");
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            if (!isLayDown)
+            {
+                LayDown();
+            }
+            else
+            {
+                GetUp();
+            }
+        }
+    }
+
+    private void LayDown()
+    {
+        isLayDown = true;
+        player.GetComponent<Animator>().SetBool("IsLayDown", true);
+
+        // 로컬 오프셋을 적용한 위치 계산
+        // Vector3 layDownPositionWithOffset = layDownPosition.TransformPoint(layDownLocalOffset);
+
+        player.transform.position = layDownPosition.position;
+        player.transform.rotation = layDownPosition.rotation;
+        playerController.enabled = false;
+        thirdPersonControllerScript.isSitting = true; 
+    }
+
+    private void GetUp()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        isLayDown = false;
+        player.GetComponent<Animator>().SetBool("IsLayDown", false);
+        playerController.enabled = true;
+        thirdPersonControllerScript.isSitting = false; 
+    }
+}
+```
+
+## 5/3
+
+## 클럽
+
+```csharp
+using UnityEngine;
+using TMPro;
+using System.Collections;
+
+public class DanceZone : MonoBehaviour
+{
+    private Animator playerAnimator;
+    private bool playerInZone = false;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = true;
+            playerAnimator = other.GetComponent<Animator>();
+            if (playerAnimator == null)
+            {
+                Debug.LogError("Player Animator component is not found.");
+            }
+            Debug.Log("Player entered the dance zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = false;
+            playerAnimator = null;
+        }
+    }
+
+    void Update()
+    {
+        if (playerInZone)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                playerAnimator.SetTrigger("Dance1");
+                Debug.Log("Player pressed key 1 to dance.");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                playerAnimator.SetTrigger("Dance2");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                playerAnimator.SetTrigger("Dance3");
+            }
+        }
+    }
+}
+
+```
+
+```csharp
+using UnityEngine;
+
+public class ClubEntrance : MonoBehaviour
+{
+    public AudioSource mapAudioSource;
+    public AudioSource clubAudioSource;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Pause();
+            clubAudioSource.Play();
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Play();
+            clubAudioSource.Pause();
+        }
+    }
+}
+
+```
+
+```csharp
+using UnityEngine;
+using System.Collections;
+
+public class CDPlayer : MonoBehaviour
+{
+    public AudioClip audioClip;
+    private bool playerInRange = false;
+    private AudioSource clubAudioSource;
+    private AudioClip originalClip;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            Debug.Log("Player entered the CD player zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            Debug.Log("Player exited the CD player zone.");
+        }
+    }
+
+    void Update()
+    {
+        if (playerInRange && Input.GetKeyDown(KeyCode.H))
+        {
+            ChangeSong();
+            Debug.Log("Player pressed H to change the song.");
+        }
+    }
+
+    private void ChangeSong()
+    {
+        if (audioClip != null)
+        {
+            if (clubAudioSource == null)
+            {
+                GameObject clubMusicObject = GameObject.FindGameObjectWithTag("ClubMusic");
+                if (clubMusicObject != null)
+                {
+                    clubAudioSource = clubMusicObject.GetComponent<AudioSource>();
+                    originalClip = clubAudioSource.clip;
+                }
+                else
+                {
+                    Debug.LogError("ClubMusic object not found.");
+                }
+            }
+
+            if (clubAudioSource != null)
+            {
+                clubAudioSource.clip = audioClip;
+                clubAudioSource.Play();
+                StartCoroutine(PlayOriginalClipAfterDelay(audioClip.length));
+            }
+            else
+            {
+                Debug.LogError("Club AudioSource not found.");
+            }
+        }
+        else
+        {
+            Debug.LogError("AudioClip is not assigned.");
+        }
+    }
+
+    private IEnumerator PlayOriginalClipAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        clubAudioSource.clip = originalClip;
+        clubAudioSource.Play();
+    }
+}
+
+```
+
+```csharp
+
+```
