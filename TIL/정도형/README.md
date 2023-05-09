@@ -1751,3 +1751,76 @@ public class PhotonManager : MonoBehaviourPunCallbacks,IOnEventCallback
         PhotonNetwork.RaiseEvent(GotoRoomEscapeEventCode, PhotonNetwork.LocalPlayer.ActorNumber, raiseEventOptions, sendOptions);
     }
 }
+
+## 2023-05-09
+- 메인 월드 캐릭터 좌,우클릭 이벤트 추가 중
+using UnityEngine;
+using Cinemachine;
+public class PlayerActions : MonoBehaviour
+
+{
+    public ParticleSystem magicParticlePrefab;
+    public float magicDuration = 1f; // 추가한 지속 시간 변수
+    private Animator animator;
+    private Transform playerTransform;
+    private Camera mainCamera;
+    private CinemachineBrain cinemachineBrain;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        playerTransform = GetComponent<Transform>();
+        mainCamera = Camera.main;
+        cinemachineBrain = mainCamera.GetComponent<CinemachineBrain>();
+    }
+
+    void Update()
+    {
+        if (Input.GetMouseButton(1))
+        {
+            ShootMagic();
+        }
+    }
+
+    void ShootMagic()
+    {
+        animator.SetTrigger("Magic");
+        Vector3 particlePosition = playerTransform.position + cinemachineBrain.transform.forward * 0.5f + Vector3.up * 1f;
+        Quaternion particleRotation = Quaternion.LookRotation(cinemachineBrain.transform.forward);
+        ParticleSystem magicInstance = Instantiate(magicParticlePrefab, particlePosition, particleRotation);
+
+        // 지속 시간이 지난 후 자동으로 제거
+        Destroy(magicInstance.gameObject, magicDuration);
+    }
+    // public GameObject particlePrefab; // 파티클 프리팹
+    // private Animator animator;
+    // private Transform playerTransform;
+
+    // private void Start()
+    // {
+    //     animator = GetComponent<Animator>();
+    //     playerTransform = GetComponent<Transform>();
+    // }
+
+    // private void Update()
+    // {
+    //     if (Input.GetMouseButtonDown(0)) // 좌클릭을 감지합니다.
+    //     {
+    //         animator.SetTrigger("Punching");
+    //     }
+    //     if (Input.GetMouseButtonDown(1)) // 우클릭을 감지합니다.
+    //     {
+    //         animator.SetTrigger("MagicCasting");
+
+    //         // 파티클 위치 계산
+    //         // Vector3 particlePosition = playerTransform.position + playerTransform.forward * 1f;
+    //         Vector3 particlePosition = playerTransform.position + playerTransform.forward * 1f + Vector3.up * 1f;
+
+    //         // 파티클 생성
+    //         GameObject particleInstance = Instantiate(particlePrefab, particlePosition, Quaternion.identity);
+
+    //         // 파티클 제거 (옵션)
+    //         Destroy(particleInstance, 1f); // 파티클의 수명이 2초일 경우 설정
+    //     }
+    // }
+}
