@@ -394,3 +394,82 @@ public class FireInteraction : MonoBehaviourPunCallbacks
     }
 }
 ```
+
+2023-05-09
+- HealingSection Rendering 문제 - Light 해결
+- WaterFall 상호작용 기능 및 오류 해결
+    - 가까이 갔을 때 BGM 볼륨 조절
+    - F 상호작용
+- Stream 상호작용 기능 및 오류 해결
+    - BGM 볼륨 조절
+- Avater Mask 추가
+- Jab 애니메이션 추가
+```C#
+using UnityEngine;
+using StarterAssets;
+
+public class HealingInteraction : MonoBehaviour
+{
+    private Animator animator;
+    public LayerMask waterLayer;
+    private bool isSwimming = false;
+
+    private ThirdPersonController thirdPersonController;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        thirdPersonController = GetComponent<ThirdPersonController>();
+    }
+
+    void Update()
+    {
+        if (isSwimming && Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+        {
+            animator.SetBool("IsTreadingWater", true);
+        }
+        else
+        {
+            animator.SetBool("IsTreadingWater", false);
+        }
+
+        // 왼쪽 클릭 시 Jab 애니메이션 트리거 발동
+        if (Input.GetMouseButtonDown(0))
+        {
+            animator.SetTrigger("Jab");
+        }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingEnter();
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingExit();
+        }
+    }
+
+    void OnSwimmingEnter()
+    {
+        Debug.Log("Entered");
+        isSwimming = true;
+        thirdPersonController.IsSwimming = true;
+        animator.SetBool("IsSwimming", true);
+    }
+
+    void OnSwimmingExit()
+    {
+        isSwimming = false;
+        thirdPersonController.IsSwimming = false;
+        animator.SetBool("IsSwimming", false);
+        animator.SetBool("IsTreadingWater", false); // 수영 상태에서 벗어나면 물장구치기 상태도 종료
+    }
+}
+```
