@@ -1824,3 +1824,146 @@ public class PlayerActions : MonoBehaviour
     //     }
     // }
 }
+
+## 2023-05-10
+- 플레이어 무기 추가 및 스왑 기능 추가
+using UnityEngine;
+using Cinemachine;
+public class PlayerActions : MonoBehaviour
+
+{
+    public ParticleSystem magicParticlePrefab;
+    public float magicDuration = 1f; // 추가한 지속 시간 변수
+    public GameObject[] weapons;
+
+    GameObject nearObject;
+    GameObject equipWeapon;
+
+    bool sDown1;
+    bool sDown2;
+    bool sDown3;
+
+
+    private Animator animator;
+    private Transform playerTransform;
+    private Camera mainCamera;
+    private CinemachineBrain cinemachineBrain;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        playerTransform = GetComponent<Transform>();
+        mainCamera = Camera.main;
+        cinemachineBrain = mainCamera.GetComponent<CinemachineBrain>();
+    }
+
+    void Update()
+    {
+        // if (Input.GetMouseButton(1))
+        // {
+        //     ShootMagic();
+        // }
+        GetInput();
+        Swap();
+        if (Input.GetMouseButtonDown(1))
+        {
+            ShootMagic();
+        }
+    }
+
+    void GetInput()
+    {
+        sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
+        sDown2 = Input.GetKeyDown(KeyCode.Alpha2);
+        sDown3 = Input.GetKeyDown(KeyCode.Alpha3);    
+    }
+
+    void Swap()
+    {
+        int weaponIndex = -1;
+        if(sDown1) weaponIndex = 0;
+        if(sDown2) weaponIndex = 1;
+        if(sDown3) weaponIndex = 2;
+        if((sDown1 || sDown2 || sDown3))
+        {
+            if(equipWeapon != null)
+                equipWeapon.SetActive(false);
+            equipWeapon = weapons[weaponIndex];
+            equipWeapon.SetActive(true);
+        }
+    }
+
+    void ShootMagic()
+    {
+        animator.SetTrigger("Magic");
+        animator.SetTrigger("IsAttack");
+
+        // 카메라의 방향으로 캐릭터의 위치에서 1만큼 앞에서 파티클이 나가게 합니다.
+        Vector3 particlePosition = playerTransform.position + mainCamera.transform.forward * 1f + Vector3.up * 1f;
+
+        Quaternion particleRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+
+        // 45도로 기울이기
+        particleRotation *= Quaternion.Euler(0, 0, 0); // x 축을 기준으로 -45도 회전
+
+        ParticleSystem magicInstance = Instantiate(magicParticlePrefab, particlePosition, particleRotation);
+
+        // 지속 시간이 지난 후 자동으로 제거
+        Destroy(magicInstance.gameObject, magicDuration);
+    }
+    // void ShootMagic()
+    // {
+    //     animator.SetTrigger("Magic");
+    //     animator.SetTrigger("IsAttack");
+        
+    //     // 카메라의 방향으로 캐릭터의 위치에서 1만큼 앞에서 파티클이 나가게 합니다.
+    //     Vector3 particlePosition = playerTransform.position + mainCamera.transform.forward * 1f + Vector3.up * 1f;
+
+    //     Quaternion particleRotation = Quaternion.LookRotation(mainCamera.transform.forward);
+    //     ParticleSystem magicInstance = Instantiate(magicParticlePrefab, particlePosition, particleRotation);
+
+    //     // 지속 시간이 지난 후 자동으로 제거
+    //     Destroy(magicInstance.gameObject, magicDuration);
+    // }
+    // void ShootMagic()
+    // {
+    //     animator.SetTrigger("Magic");
+    //     Vector3 particlePosition = playerTransform.position + cinemachineBrain.transform.forward * 1f + Vector3.up * 1f;
+    //     Quaternion particleRotation = Quaternion.LookRotation(cinemachineBrain.transform.forward);
+    //     ParticleSystem magicInstance = Instantiate(magicParticlePrefab, particlePosition, particleRotation);
+
+    //     // 지속 시간이 지난 후 자동으로 제거
+    //     Destroy(magicInstance.gameObject, magicDuration);
+    // }
+    // public GameObject particlePrefab; // 파티클 프리팹
+    // private Animator animator;
+    // private Transform playerTransform;
+
+    // private void Start()
+    // {
+    //     animator = GetComponent<Animator>();
+    //     playerTransform = GetComponent<Transform>();
+    // }
+
+    // private void Update()
+    // {
+    //     if (Input.GetMouseButtonDown(0)) // 좌클릭을 감지합니다.
+    //     {
+    //         animator.SetTrigger("Punching");
+    //     }
+    //     if (Input.GetMouseButtonDown(1)) // 우클릭을 감지합니다.
+    //     {
+    //         animator.SetTrigger("MagicCasting");
+
+    //         // 파티클 위치 계산
+    //         // Vector3 particlePosition = playerTransform.position + playerTransform.forward * 1f;
+    //         Vector3 particlePosition = playerTransform.position + playerTransform.forward * 1f + Vector3.up * 1f;
+
+    //         // 파티클 생성
+    //         GameObject particleInstance = Instantiate(particlePrefab, particlePosition, Quaternion.identity);
+
+    //         // 파티클 제거 (옵션)
+    //         Destroy(particleInstance, 1f); // 파티클의 수명이 2초일 경우 설정
+    //     }
+    // }
+}
