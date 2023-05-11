@@ -473,3 +473,80 @@ public class HealingInteraction : MonoBehaviour
     }
 }
 ```
+
+2023-05-11
+- HealingSection Sunbed 상호작용 추가
+- Sunbed의 포톤 동기화 작업 진행
+    - 플레이어의 불확실한 종료 시 상태 전환 및 동기화
+- FishingChar 동기화 추가
+- Club 디자인 변경
+    
+```C#
+using System;
+using Photon.Pun;
+using UnityEngine;
+
+public class Sunbed : MonoBehaviourPunCallbacks, IPunObservable
+{
+    [SerializeField]
+    private bool isOccupied = false;
+
+    [SerializeField]
+    private int currentPlayerViewID = 0; // 현재 소유자의 PhotonView ID를 저장하는 변수
+
+    public bool IsOccupied
+    {
+        get { return isOccupied; }
+    }
+
+    public int GetCurrentPlayerViewID
+    {
+        get { return currentPlayerViewID; }
+    }
+
+
+    private void Update()
+    {
+        // 현재 소유자의 PhotonView ID가 존재하는지 확인합니다.
+        if (currentPlayerViewID != 0 && PhotonNetwork.GetPhotonView(currentPlayerViewID) == null)
+        {
+            // 소유자를 찾을 수 없으므로 Occupy()를 실행하고 currentOwnerViewID를 업데이트합니다.
+            photonView.RPC("Vacate", RpcTarget.All);
+            currentPlayerViewID = 0;
+        }
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.IsWriting)
+        {
+            stream.SendNext(isOccupied);
+            stream.SendNext(currentPlayerViewID);
+        }
+        else
+        {
+            isOccupied = (bool)stream.ReceiveNext();
+            currentPlayerViewID = (int)stream.ReceiveNext();
+        }
+    }
+    
+    [PunRPC]
+    public void Occupy(int playerId)
+    {
+        isOccupied = true;
+        currentPlayerViewID = playerId;
+    }
+
+    [PunRPC]
+    public void Vacate()
+    {
+        isOccupied = false;
+        currentPlayerViewID = 0;
+    }
+
+    public static implicit operator GameObject(Sunbed v)
+    {
+        throw new NotImplementedException();
+    }
+}
+```
