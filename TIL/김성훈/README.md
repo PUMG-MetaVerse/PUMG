@@ -508,3 +508,725 @@ public class ChairInteract : MonoBehaviour
     }
 }
 ```
+
+## 5/1
+
+```C#
+//최종본
+using System.Collections;
+using UnityEngine;
+using StarterAssets;
+
+public class ChairInteract : MonoBehaviour
+{
+    public bool isSitting;
+    public bool isInRange;
+    public GameObject player;
+    public string playerTag = "Player";
+    public KeyCode interactKey = KeyCode.H;
+    public Transform sitPosition;
+    public CharacterController playerController;
+    public ThirdPersonController thirdPersonControllerScript;
+    public KeyCode throwKey = KeyCode.T;
+    public Transform playerHands;
+    public string fishingPoleName = "Fishing-pole";
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            playerController = player.GetComponent<CharacterController>();
+            thirdPersonControllerScript = player.GetComponent<ThirdPersonController>();
+            // playerHands = player.transform.Find("Mesh/Body/Hands");
+            playerHands = player.transform.Find("Armature/Root_M/Spine1_M/Spine2_M/Chest_M/Scapula_L/Shoulder_L/Elbow_L/Wrist_L");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            playerController = null;
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            if (!isSitting)
+            {
+                Sit();
+            }
+            else
+            {
+                Stand();
+            }
+        }
+
+        if (Input.GetKeyDown(throwKey) && isSitting)
+        {
+            Animator animator = player.GetComponent<Animator>();
+            bool isThrowing = animator.GetBool("isThrowing");
+
+            if (!isThrowing)
+            {
+                animator.SetBool("isThrowing", true);
+            }
+            else
+            {
+                animator.SetBool("isThrowing", false);
+            }
+        }
+    }
+
+    private void Sit()
+    {
+        isSitting = true;
+        player.GetComponent<Animator>().SetTrigger("IsSitting");
+        player.transform.position = sitPosition.position;
+        player.transform.rotation = sitPosition.rotation;
+        playerController.enabled = false;
+        thirdPersonControllerScript.isSitting = true;
+
+        Transform fishingPole = transform.Find(fishingPoleName);
+        if (fishingPole != null)
+        {
+            fishingPole.SetParent(playerHands);
+            fishingPole.localPosition = new Vector3(0.09f, -0.02f, 0.07f);
+            fishingPole.localRotation = Quaternion.Euler(39f, 82f, -185f);
+        }
+        else
+        {
+            Debug.LogError("Fishing-pole not found as a child of the chair object.");
+        }
+    }
+
+    private void Stand()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        isSitting = false;
+        player.GetComponent<Animator>().SetTrigger("IsStanding");
+        playerController.enabled = true;
+        thirdPersonControllerScript.isSitting = false;
+
+        Transform fishingPoleInHand = playerHands.Find(fishingPoleName);
+        if (fishingPoleInHand != null)
+        {
+            fishingPoleInHand.SetParent(transform);
+            fishingPoleInHand.position = playerHands.position;
+            fishingPoleInHand.rotation = playerHands.rotation;
+            fishingPoleInHand.localRotation = Quaternion.Euler(0, 0, 0);
+
+            Vector3 offset = playerHands.transform.forward * 0.25f;
+            fishingPoleInHand.position += offset;
+        }
+    }
+}
+```
+
+### 5/2
+
+```C
+using System.Collections;
+using UnityEngine;
+using StarterAssets;
+
+public class LayDownGetUp : MonoBehaviour
+{
+    public bool isLayDown;
+    public bool isInRange;
+    private GameObject player;
+    private string playerTag = "Player";
+    private KeyCode interactKey = KeyCode.H;
+    public Transform layDownPosition;
+    public CharacterController playerController;
+    public ThirdPersonController thirdPersonControllerScript;
+    // public Vector3 layDownLocalOffset;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = true;
+            player = other.gameObject;
+            playerController = player.GetComponent<CharacterController>();
+            thirdPersonControllerScript = player.GetComponent<ThirdPersonController>();
+            Debug.Log("lounger");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            isInRange = false;
+            player = null;
+            playerController = null;
+            Debug.Log("loungerout");
+        }
+    }
+
+    private void Update()
+    {
+        if (isInRange && Input.GetKeyDown(interactKey))
+        {
+            if (!isLayDown)
+            {
+                LayDown();
+            }
+            else
+            {
+                GetUp();
+            }
+        }
+    }
+
+    private void LayDown()
+    {
+        isLayDown = true;
+        player.GetComponent<Animator>().SetBool("IsLayDown", true);
+
+        // 로컬 오프셋을 적용한 위치 계산
+        // Vector3 layDownPositionWithOffset = layDownPosition.TransformPoint(layDownLocalOffset);
+
+        player.transform.position = layDownPosition.position;
+        player.transform.rotation = layDownPosition.rotation;
+        playerController.enabled = false;
+        thirdPersonControllerScript.isSitting = true; 
+    }
+
+    private void GetUp()
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        isLayDown = false;
+        player.GetComponent<Animator>().SetBool("IsLayDown", false);
+        playerController.enabled = true;
+        thirdPersonControllerScript.isSitting = false; 
+    }
+}
+```
+
+## 5/3
+
+## 클럽
+
+```csharp
+using UnityEngine;
+using TMPro;
+using System.Collections;
+
+public class DanceZone : MonoBehaviour
+{
+    private Animator playerAnimator;
+    private bool playerInZone = false;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = true;
+            playerAnimator = other.GetComponent<Animator>();
+            if (playerAnimator == null)
+            {
+                Debug.LogError("Player Animator component is not found.");
+            }
+            Debug.Log("Player entered the dance zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInZone = false;
+            playerAnimator = null;
+        }
+    }
+
+    void Update()
+    {
+        if (playerInZone)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                playerAnimator.SetTrigger("Dance1");
+                Debug.Log("Player pressed key 1 to dance.");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                playerAnimator.SetTrigger("Dance2");
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                playerAnimator.SetTrigger("Dance3");
+            }
+        }
+    }
+}
+```
+
+```csharp
+using UnityEngine;
+
+public class ClubEntrance : MonoBehaviour
+{
+    public AudioSource mapAudioSource;
+    public AudioSource clubAudioSource;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Pause();
+            clubAudioSource.Play();
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            mapAudioSource.Play();
+            clubAudioSource.Pause();
+        }
+    }
+}
+```
+
+```csharp
+using UnityEngine;
+using System.Collections;
+
+public class CDPlayer : MonoBehaviour
+{
+    public AudioClip audioClip;
+    private bool playerInRange = false;
+    private AudioSource clubAudioSource;
+    private AudioClip originalClip;
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            Debug.Log("Player entered the CD player zone.");
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            Debug.Log("Player exited the CD player zone.");
+        }
+    }
+
+    void Update()
+    {
+        if (playerInRange && Input.GetKeyDown(KeyCode.H))
+        {
+            ChangeSong();
+            Debug.Log("Player pressed H to change the song.");
+        }
+    }
+
+    private void ChangeSong()
+    {
+        if (audioClip != null)
+        {
+            if (clubAudioSource == null)
+            {
+                GameObject clubMusicObject = GameObject.FindGameObjectWithTag("ClubMusic");
+                if (clubMusicObject != null)
+                {
+                    clubAudioSource = clubMusicObject.GetComponent<AudioSource>();
+                    originalClip = clubAudioSource.clip;
+                }
+                else
+                {
+                    Debug.LogError("ClubMusic object not found.");
+                }
+            }
+
+            if (clubAudioSource != null)
+            {
+                clubAudioSource.clip = audioClip;
+                clubAudioSource.Play();
+                StartCoroutine(PlayOriginalClipAfterDelay(audioClip.length));
+            }
+            else
+            {
+                Debug.LogError("Club AudioSource not found.");
+            }
+        }
+        else
+        {
+            Debug.LogError("AudioClip is not assigned.");
+        }
+    }
+
+    private IEnumerator PlayOriginalClipAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        clubAudioSource.clip = originalClip;
+        clubAudioSource.Play();
+    }
+}
+```
+
+```csharp
+
+```
+
+### 5/4
+
+```csharp
+using UnityEngine;
+
+public class LaserBeams : MonoBehaviour
+{
+    public int numberOfLasers = 6;
+    public float laserRange = 50f;
+    public float laserStartWidth = 0.3f;
+    public float laserEndWidth = 0.1f;
+    public float startAngle = 45f; // 부채꼴 시작 각도
+    public float endAngle = 135f; // 부채꼴 끝 각도
+    public Color[] laserColors = { Color.blue, Color.green, Color.cyan, Color.blue, Color.green, Color.cyan };
+
+    private LineRenderer[] lineRenderers;
+    private float[] flickerTimers;
+
+    void Start()
+    {
+        lineRenderers = new LineRenderer[numberOfLasers];
+        flickerTimers = new float[numberOfLasers];
+
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            GameObject laser = new GameObject($"Laser_{i}");
+            laser.transform.SetParent(transform);
+            lineRenderers[i] = laser.AddComponent<LineRenderer>();
+            lineRenderers[i].startWidth = laserStartWidth;
+            lineRenderers[i].endWidth = laserEndWidth;
+            lineRenderers[i].material = new Material(Shader.Find("Sprites/Default"));
+            Color semiTransparentColor = laserColors[i % laserColors.Length];
+            semiTransparentColor.a = 0.5f;
+            lineRenderers[i].material.color = semiTransparentColor;
+            lineRenderers[i].sortingOrder = 1;
+            flickerTimers[i] = Random.Range(1f, 0.8f);
+        }
+    }
+
+    void Update()
+    {
+        float angleRange = endAngle - startAngle;
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            float angle = startAngle + (angleRange / (numberOfLasers - 1)) * i;
+            Vector3 direction = Quaternion.Euler(0, 0, angle) * transform.up;
+
+            lineRenderers[i].SetPosition(0, transform.position);
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, laserRange);
+            if (hit.collider != null)
+            {
+                lineRenderers[i].SetPosition(1, hit.point);
+            }
+            else
+            {
+                lineRenderers[i].SetPosition(1, transform.position + direction * laserRange);
+            }
+
+            flickerTimers[i] -= Time.deltaTime;
+            if (flickerTimers[i] <= 0)
+            {
+                lineRenderers[i].enabled = !lineRenderers[i].enabled;
+                flickerTimers[i] = Random.Range(0.2f, 0.8f);
+            }
+        }
+    }
+}
+```
+
+### 5/8
+
+```csharp
+
+```
+
+## 5/9
+
+```
+풍선 두개 
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using StarterAssets;
+
+namespace HealingSection.Scripts
+{
+    public class BalloonPickup : MonoBehaviour
+    {
+        public GameObject balloonPrefab;
+        public float fallSpeed = 0.5f;
+        private GameObject[] balloonInstances = new GameObject[2];
+        private bool canPickup = false;
+        private Rigidbody playerRigidbody;
+        // private Transform playerHands;
+        private Transform playerLeftHand;
+        private Transform playerRightHand;
+        private bool isFalling = false;
+        private ThirdPersonController thirdPersonController;
+        private float originalDrag;
+        private float originalGravity;
+
+        private void Update()
+        {
+            if (canPickup && Input.GetKeyDown(KeyCode.F))
+            {
+                AttachBalloon();
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                canPickup = true;
+                thirdPersonController = other.GetComponent<ThirdPersonController>();
+                playerRigidbody = other.GetComponent<Rigidbody>();
+                playerLeftHand = other.transform.Find("Armature/Root_M/Spine1_M/Spine2_M/Chest_M/Scapula_L/Shoulder_L/Elbow_L/Wrist_L");
+                playerRightHand = other.transform.Find("Armature/Root_M/Spine1_M/Spine2_M/Chest_M/Scapula_R/Shoulder_R/Elbow_R/Wrist_R");
+                originalDrag = playerRigidbody.drag;
+                Debug.Log("Player entered trigger area.");
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                canPickup = false;
+            }
+        }
+
+        private void AttachBalloon()
+        {
+            if (balloonInstances[0] == null && balloonInstances[1] == null)
+            {
+                StartCoroutine(ChangePlayerStats());
+            }
+        }
+
+        private IEnumerator ChangePlayerStats()
+        {
+
+            Debug.Log("Giving player balloons and changing gravity.");
+
+            balloonInstances[0] = Instantiate(balloonPrefab, playerLeftHand.position, Quaternion.identity);
+            balloonInstances[0].transform.SetParent(playerLeftHand);
+            balloonInstances[0].transform.localPosition = Vector3.zero;
+
+            balloonInstances[1] = Instantiate(balloonPrefab, playerRightHand.position, Quaternion.identity);
+            balloonInstances[1].transform.SetParent(playerRightHand);
+            balloonInstances[1].transform.localPosition = Vector3.zero;
+
+            float originalGravity = thirdPersonController.Gravity;
+            thirdPersonController.Gravity = -0.01f;
+            playerRigidbody.drag = 10f;
+
+            Physics.gravity *= 0.1f;
+
+            isFalling = true;
+
+            while (isFalling)
+            {
+                Vector3 motion = new Vector3(0, fallSpeed , 0) * Time.deltaTime;
+                playerRigidbody.AddForce(motion, ForceMode.VelocityChange);
+
+                if (balloonInstances[0] != null)
+                {
+                    balloonInstances[0].transform.position = playerLeftHand.position;
+                }
+                if (balloonInstances[1] != null)
+                {
+                    balloonInstances[1].transform.position = playerRightHand.position;
+                }
+
+                if (IsPlayerTouchingGroundOrWater())
+                {
+                    DetachBalloon();
+                    break;
+                }
+
+                if (!isFalling)
+                {
+                    ResetPlayerStats();
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            thirdPersonController.Gravity = originalGravity;
+            if (playerRigidbody != null)
+            {
+                playerRigidbody.drag = originalDrag;
+                playerRigidbody.useGravity = true;
+            }
+                        Debug.Log("Player gravity and drag returned to original values.");
+
+            if (balloonInstances[0] != null)
+            {
+                Destroy(balloonInstances[0]);
+                balloonInstances[0] = null;
+            }
+            if (balloonInstances[1] != null)
+            {
+                Destroy(balloonInstances[1]);
+                balloonInstances[1] = null;
+            }
+
+        }
+
+        private void DetachBalloon()
+        {
+            if (balloonInstances[0] != null)
+            {
+                Destroy(balloonInstances[0]);
+                balloonInstances[0] = null;
+            }
+            if (balloonInstances[1] != null)
+            {
+                Destroy(balloonInstances[1]);
+                balloonInstances[1] = null;
+            }
+            isFalling = false;
+            ResetPlayerStats();
+        }
+
+        private void ResetPlayerStats()
+        {
+            thirdPersonController.Gravity = originalGravity;
+            if (playerRigidbody != null)
+            {
+                playerRigidbody.drag = originalDrag;
+                playerRigidbody.useGravity = true;
+            }
+            Debug.Log("Player gravity and drag returned to original values.");
+        }
+
+        private bool IsPlayerTouchingGroundOrWater()
+        {
+            float distanceToGround = 0.5f; 
+            int groundAndWaterLayerMask = (1 << LayerMask.NameToLayer("Ground")) | (1 << LayerMask.NameToLayer("Water"));
+
+            RaycastHit hit;
+            if (Physics.Raycast(playerRigidbody.transform.position, Vector3.down, out hit, distanceToGround, groundAndWaterLayerMask))
+            {
+                return true;
+            }
+            return false;
+        }
+    }
+}
+```
+
+## 5/10
+
+```
+
+```
+
+## 5/11
+
+```
+// 완성
+
+using UnityEngine;
+
+public class LaserBeams : MonoBehaviour
+{
+    public int numberOfLasers = 6;
+    public float laserRange = 50f;
+    public float laserStartWidth = 0.3f;
+    public float laserEndWidth = 0.1f;
+    public float startAngle = -50f; // 부채꼴 시작 각도
+    public float endAngle = 50f; // 부채꼴 끝 각도
+    public Color[] laserColors = { Color.blue, Color.green, Color.cyan, Color.blue, Color.green, Color.cyan };
+
+    private LineRenderer[] lineRenderers;
+    private float[] flickerTimers;
+
+    void Start()
+    {
+        lineRenderers = new LineRenderer[numberOfLasers];
+        flickerTimers = new float[numberOfLasers];
+        float angleRange = endAngle - startAngle;
+
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            GameObject laser = new GameObject($"Laser_{i}");
+            laser.transform.SetParent(transform);
+            laser.transform.localRotation = Quaternion.Euler(0f, 0f, startAngle + (angleRange / (numberOfLasers - 1)) * i);
+            lineRenderers[i] = laser.AddComponent<LineRenderer>();
+            lineRenderers[i].startWidth = laserStartWidth;
+            lineRenderers[i].endWidth = laserEndWidth;
+            lineRenderers[i].material = new Material(Shader.Find("Sprites/Default"));
+            Color semiTransparentColor = laserColors[i % laserColors.Length];
+            semiTransparentColor.a = 0.5f;
+            lineRenderers[i].material.color = semiTransparentColor;
+            lineRenderers[i].sortingOrder = 1;
+            flickerTimers[i] = Random.Range(1f, 0.8f);
+        }
+    }
+
+
+    void Update()
+    {
+        Vector3[] directions = new Vector3[numberOfLasers];
+        directions[0] = Quaternion.Euler(0f, 45f, -50f) * transform.up; // 첫 번째 빔ㅂ
+        directions[1] = Quaternion.Euler(0f, 45f, -30f) * transform.up; 
+        directions[2] = Quaternion.Euler(0f, 45f, -10f) * transform.up; 
+        directions[3] = Quaternion.Euler(0f, 45f, 10f) * transform.up; 
+        directions[4] = Quaternion.Euler(0f, 45f, 30f) * transform.up;; 
+        directions[5] = Quaternion.Euler(0f, 45f, 50f) * transform.up;;
+
+        for (int i = 0; i < numberOfLasers; i++)
+        {
+            // 빔 그리기
+            lineRenderers[i].SetPosition(0, transform.position);
+            RaycastHit2D hit = Physics2D.Raycast(transform.position, directions[i], laserRange);
+            if (hit.collider != null)
+            {
+                lineRenderers[i].SetPosition(1, hit.point);
+            }
+            else
+            {
+                lineRenderers[i].SetPosition(1, transform.position + directions[i] * laserRange);
+            }
+
+            // 빔 깜빡임
+            flickerTimers[i] -= Time.deltaTime;
+            if (flickerTimers[i] <= 0)
+            {
+                lineRenderers[i].enabled = !lineRenderers[i].enabled;
+                flickerTimers[i] = Random.Range(0.2f, 0.8f);
+            }
+        }
+    }
+}
+```
