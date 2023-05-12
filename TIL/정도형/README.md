@@ -1967,3 +1967,60 @@ public class PlayerActions : MonoBehaviour
     //     }
     // }
 }
+
+## 2023-05-12
+- 무기 충돌 작업 추가
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Photon.Pun;
+
+public class ObjectKnockback : MonoBehaviourPun
+{
+    public float knockbackForce = 1f;
+
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+            PhotonView otherPhotonView = other.gameObject.GetComponent<PhotonView>();
+            PhotonView weaponPhotonView = this.GetComponent<PhotonView>();
+            GameObject player = this.transform.root.gameObject;
+            Animator animator = player.GetComponent<Animator>();
+
+            // If the owner of the weapon is the same as the player it collided with, ignore the collision
+            if (weaponPhotonView.OwnerActorNr == otherPhotonView.OwnerActorNr)
+            {
+                return;
+            }
+            if(animator.GetCurrentAnimatorStateInfo(1).IsName("one_hand_sword_right"))
+            {
+                Debug.Log("때림");
+                Vector3 knockbackDirection = other.transform.position - transform.position;
+                knockbackDirection.y = 0;
+                knockbackDirection.Normalize();
+                
+                other.GetComponent<PhotonView>().RPC("ApplyKnockback", RpcTarget.All, knockbackDirection * knockbackForce);
+            }
+
+            
+        }
+        
+    }
+    
+    // public float knockbackForce = 10f;  // The force with which the player will be knocked back
+
+    // void OnCollisionEnter(Collision collision)
+    // {
+    //     if (collision.gameObject.CompareTag("Player") && collision.gameObject.GetComponent<PhotonView>().IsMine)
+    //     {
+    //         Vector3 knockbackDirection = collision.transform.position - transform.position;
+    //         knockbackDirection.y = 0;  // optional, if you want to avoid knocking the player upwards
+    //         knockbackDirection.Normalize();
+
+    //         collision.gameObject.GetComponent<PhotonView>().RPC("ApplyKnockback", RpcTarget.All, knockbackDirection * knockbackForce);
+    //     }
+    // }
+}
+
