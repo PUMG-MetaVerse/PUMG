@@ -1230,3 +1230,104 @@ public class LaserBeams : MonoBehaviour
     }
 }
 ```
+
+5/15
+
+```
+using UnityEngine;
+using UnityEngine.UI;
+
+public class OutlineControl : MonoBehaviour
+{
+    public float range = 100f;
+    private RaycastHit hitInfo, preHitInfo;
+    private bool isHighlighted = false;
+
+    public GameObject actionTextObject;
+    private Text actionText;
+
+    private void Start()
+    {
+        actionText = actionTextObject.GetComponent<Text>();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            if (isHighlighted)
+            {
+                ClearObjectHighlight(preHitInfo.transform);
+                isHighlighted = false;
+            }
+            else if (preHitInfo.transform != null)
+            {
+                ShowObjectHighlight(preHitInfo.transform, 0);
+                isHighlighted = true;
+                ShowActiveText(preHitInfo.transform.tag);
+            }
+        }
+
+        ShootRaycast();
+    }
+
+    private void ShowObjectHighlight(Transform parent, int idx)
+    {
+        cakeslice.Outline outLine = parent.GetComponent<cakeslice.Outline>();
+
+        if (outLine != null)
+        {
+            outLine.enabled = true;
+            outLine.eraseRenderer = false;
+        }
+
+        foreach (Transform child in parent)
+        {
+            ShowObjectHighlight(child, idx + 1);
+        }
+    }
+
+    private void ClearObjectHighlight(Transform parent)
+    {
+        cakeslice.Outline outLine = parent.GetComponent<cakeslice.Outline>();
+
+        if (outLine != null)
+        {
+            outLine.enabled = false;
+            outLine.eraseRenderer = true;
+        }
+
+        foreach (Transform child in parent)
+        {
+            ClearObjectHighlight(child);
+        }
+    }
+
+    private void ShootRaycast()
+    {
+        if (preHitInfo.transform != null && !isHighlighted)
+        {
+            ClearObjectHighlight(preHitInfo.transform);
+        }
+
+        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hitInfo, range))
+        {
+            if (!isHighlighted)
+            {
+                ShowObjectHighlight(hitInfo.transform, 0);
+            }
+        }
+
+        preHitInfo = hitInfo;
+    }
+
+    private void ShowActiveText(string tag)
+    {
+        if (string.Equals(tag, "Sunbed", System.StringComparison.OrdinalIgnoreCase))
+        {
+            actionText.text = "눕기 " + "<color=red>" + "(F)" + "</color>";
+            actionTextObject.SetActive(true);
+        }
+    }
+}
+```
