@@ -1606,3 +1606,112 @@ public class HealingInteraction : MonoBehaviourPunCallbacks
     }
 }
 ```
+
+### 5/17
+
+```
+using System.Collections.Generic;
+using UnityEngine;
+using StarterAssets;
+using Photon.Pun;
+
+public class LayDownGetUp : MonoBehaviourPunCallbacks
+{
+    private PhotonView photonView;
+    public bool isLayDown;
+    private GameObject player;
+    private string playerTag = "Player";
+    private KeyCode interactKey = KeyCode.F;
+    public Transform layDownPosition;
+    private int occupiedByPlayerId;
+    private bool isChairOccupied;
+
+    private List<int> playersInRange = new List<int>();
+
+    void Start()
+    {
+        photonView = GetComponent<PhotonView>();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            playersInRange.Add(other.GetComponent<PhotonView>().Owner.ActorNumber);
+            if (player == null)
+            {
+                player = other.gameObject;  // player 변수를 설정합니다.
+            }
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            playersInRange.Remove(other.GetComponent<PhotonView>().Owner.ActorNumber);
+            if (other.gameObject == player)  // player 변수를 제거합니다.
+            {
+                player = null;
+            }
+            if (other.GetComponent<PhotonView>().Owner.ActorNumber == occupiedByPlayerId)
+            {
+                photonView.RPC("GetUp", RpcTarget.All);
+            }
+        }
+    }
+
+      private void Update()
+    {
+        if (playersInRange.Contains(PhotonNetwork.LocalPlayer.ActorNumber) && Input.GetKeyDown(interactKey))
+        {
+            if (!isLayDown && !isChairOccupied)
+            {
+                photonView.RPC("LayDown", RpcTarget.All, PhotonNetwork.LocalPlayer.ActorNumber);
+            }
+            else
+            {
+                if (PhotonNetwork.LocalPlayer.ActorNumber == occupiedByPlayerId)
+                {
+                    photonView.RPC("GetUp", RpcTarget.All);
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    private void LayDown(int playerPhotonId)
+    {
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        isChairOccupied = true;
+        isLayDown = true;
+        occupiedByPlayerId = playerPhotonId;
+        player.GetComponent<Animator>().SetBool("IsLayDown", true);
+        player.transform.position = layDownPosition.position;
+        player.transform.rotation = layDownPosition.rotation;
+        player.GetComponent<CharacterController>().enabled = false;
+        player.GetComponent<ThirdPersonController>().isSitting = true;
+    }
+
+    [PunRPC]
+    private void GetUp()
+    {
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        isLayDown = false;
+        player.GetComponent<Animator>().SetBool("IsLayDown", false);
+        player.GetComponent<CharacterController>().enabled = true;
+        player.GetComponent<ThirdPersonController>().isSitting = false;
+        isChairOccupied = false;
+        occupiedByPlayerId = 0; // 플레이어가 일어났으므로 ID를 초기화합니다.
+        player = null; // 플레이어 참조를 초기화합니다.
+    }
+}
+```
