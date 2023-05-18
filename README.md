@@ -137,44 +137,31 @@ server
 
 ```
 client
-  ├── RoomEscape
-  │   ├── Animation
-  │   ├── Images
-  │   ├── Locks
-  │   ├── Items
-  │   └── Scripts
+  ├── AeroCraft
+  │   ├── Character
+  │   ├── Common
+  │   ├── MiniMap
+  │   └── Object
   ├── HealingSection
-  │   ├── Animation
-  │   ├── Animator
-  │   ├── PostProcessing
-  │   ├── Prefabs
-  │   ├── Texture
-  │   ├── Scripts
-  │   └── BGM
-  ├── Aircraft_Simulator
-  │   ├── IMG
-  │   ├── Model
-  │   ├── Prefab
-  │   ├── Sound
-  │   ├── Terrain
-  │   ├── Texture
-  │   └── Script
-  ├── LoadScene
-  │   ├── Escape
-  │   └── Scene
-  ├── Padlock Pack
-  │   └── Padlocks
-  ├── Photon
-  │   ├── PhotonChat
-  │   ├── PhotonLibs
-  │   ├── PhotonRealtime
-  │   ├── PhotonUnityNetworking
-  │   └── PhotonVoice
-  └── Scenes
-      ├── 04 - City
-      ├── 04 - City_Profiles
-      ├── HealingScene
-      └── HealingScene_Profiles
+  │   ├── Character
+  │   ├── Common
+  │   ├── Community
+  │   └── MiniMap
+  ├── MainWorld
+  │   ├── Character
+  │   ├── Common
+  │   ├── Community
+  │   ├── MiniMap
+  │   ├── MoveObject
+  │   ├── Object
+  │   ├── Portal
+  │   ├── Ranking
+  │   └── Title
+  └── RoomEscape
+      ├── Animation
+      ├── Character
+      ├── Common
+      └── Object
 ```
 
 </br>
