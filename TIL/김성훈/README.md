@@ -1230,3 +1230,488 @@ public class LaserBeams : MonoBehaviour
     }
 }
 ```
+
+5/15
+
+```
+using UnityEngine;
+using UnityEngine.UI;
+
+public class OutlineControl : MonoBehaviour
+{
+    public float range = 100f;
+    private RaycastHit hitInfo, preHitInfo;
+    private bool isHighlighted = false;
+
+    public GameObject actionTextObject;
+    private Text actionText;
+
+    private void Start()
+    {
+        actionText = actionTextObject.GetComponent<Text>();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            if (isHighlighted)
+            {
+                ClearObjectHighlight(preHitInfo.transform);
+                isHighlighted = false;
+            }
+            else if (preHitInfo.transform != null)
+            {
+                ShowObjectHighlight(preHitInfo.transform, 0);
+                isHighlighted = true;
+                ShowActiveText(preHitInfo.transform.tag);
+            }
+        }
+
+        ShootRaycast();
+    }
+
+    private void ShowObjectHighlight(Transform parent, int idx)
+    {
+        cakeslice.Outline outLine = parent.GetComponent<cakeslice.Outline>();
+
+        if (outLine != null)
+        {
+            outLine.enabled = true;
+            outLine.eraseRenderer = false;
+        }
+
+        foreach (Transform child in parent)
+        {
+            ShowObjectHighlight(child, idx + 1);
+        }
+    }
+
+    private void ClearObjectHighlight(Transform parent)
+    {
+        cakeslice.Outline outLine = parent.GetComponent<cakeslice.Outline>();
+
+        if (outLine != null)
+        {
+            outLine.enabled = false;
+            outLine.eraseRenderer = true;
+        }
+
+        foreach (Transform child in parent)
+        {
+            ClearObjectHighlight(child);
+        }
+    }
+
+    private void ShootRaycast()
+    {
+        if (preHitInfo.transform != null && !isHighlighted)
+        {
+            ClearObjectHighlight(preHitInfo.transform);
+        }
+
+        if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hitInfo, range))
+        {
+            if (!isHighlighted)
+            {
+                ShowObjectHighlight(hitInfo.transform, 0);
+            }
+        }
+
+        preHitInfo = hitInfo;
+    }
+
+    private void ShowActiveText(string tag)
+    {
+        if (string.Equals(tag, "Sunbed", System.StringComparison.OrdinalIgnoreCase))
+        {
+            actionText.text = "눕기 " + "<color=red>" + "(F)" + "</color>";
+            actionTextObject.SetActive(true);
+        }
+    }
+}
+```
+
+### 5/16
+
+```
+using UnityEngine;
+using StarterAssets;
+using Photon.Pun;
+using System.Collections;
+
+public class HealingInteraction : MonoBehaviourPunCallbacks
+{
+    [Tooltip("Common")]
+    private Animator animator;
+    private ThirdPersonController thirdPersonController;
+    private CharacterController characterController;
+
+    [Tooltip("Water")]
+    public LayerMask waterLayer;
+    private bool isSwimming = false;
+    private bool wasTreadingWater = false;
+
+    [Tooltip("SunBed")]
+    public LayerMask sunbedLayer; // 썬베드 레이어
+    private Sunbed currentSunbed;
+    private bool isLayDown = false;
+    private Vector3 originalPosition; // 썬베드에 누워있기 전의 원래 위치
+    private Quaternion originalRotation; // 썬베드에 누워있기 전의 원래 회전
+    public int currentSunbedID = -1; // 현재 누운 썬베드의 PhotonView ID
+
+    [Tooltip("Fishing")]
+    public LayerMask fishingLayer; // 썬베드 레이어
+    private bool isFishing = false;
+    private FishingItem currrentFisingItem;
+    public int currentFinshingID = -1; // 현재 누운 썬베드의 PhotonView ID
+    // PlayerOutlineControl 참조를 위한 필드 추가
+    private PlayerOutlineControl playerOutlineControl;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+        thirdPersonController = GetComponent<ThirdPersonController>();
+        characterController = GetComponent<CharacterController>();
+        // 성훈이가 추가한 부분
+        MiniMap miniMap = FindObjectOfType<MiniMap>();
+        if (miniMap != null)
+        {
+            miniMap.SetPlayer(transform);
+        }
+        playerOutlineControl = GetComponent<PlayerOutlineControl>(); // dkdntfkdls
+        // 성훈이가 추가한 부분
+    }
+
+    void Update()
+    {
+        if (!photonView.IsMine) return; // 추가: 로컬 플레이어만 입력을 처리하도록 변경
+
+        bool isTreadingWater = isSwimming && Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0;
+        if (isTreadingWater != wasTreadingWater)
+        {
+            animator.SetBool("IsTreadingWater", isTreadingWater);
+            wasTreadingWater = isTreadingWater;
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            animator.SetTrigger("Jab");
+        }
+
+        // F 키가 눌렸을 때 처리
+        if (Input.GetKeyDown(KeyCode.F))
+        {   // 썬 베드 상호작용
+            if (currentSunbed != null)
+            {
+                if (!currentSunbed.IsOccupied)
+                {
+                    OnLayDownEnter();
+                }
+                else if(isLayDown)
+                {
+                    OnLayDownExit();
+                }
+            }
+            // 낚시 상호작용
+            if (currrentFisingItem != null)
+            {
+                if (!currrentFisingItem.IsSitting)
+                {
+                    OnFishingEnter();
+                }
+                else if(isFishing)
+                {
+                    OnFishingExit();
+                }
+            }
+        }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingEnter();
+        }
+
+        if (((1 << other.gameObject.layer) & sunbedLayer) != 0)
+        {
+            currentSunbed = other.GetComponent<Sunbed>();
+        }
+
+        if (((1 << other.gameObject.layer) & fishingLayer) != 0)
+        {
+            currrentFisingItem = other.GetComponent<FishingItem>();
+            currentFinshingID = currrentFisingItem.finshingID;
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (((1 << other.gameObject.layer) & waterLayer) != 0 && other is BoxCollider)
+        {
+            OnSwimmingExit();
+        }
+
+        if (((1 << other.gameObject.layer) & sunbedLayer) != 0)
+        {
+            currentSunbed = null;
+        }
+
+        if (((1 << other.gameObject.layer) & fishingLayer) != 0)
+        {
+            currrentFisingItem = null;
+            currentFinshingID = -1;
+        }
+    }
+
+    void OnSwimmingEnter()
+    {
+        isSwimming = true;
+        thirdPersonController.IsSwimming = true;
+        animator.SetBool("IsSwimming", true);
+    }
+
+    void OnSwimmingExit()
+    {
+        isSwimming = false;
+        thirdPersonController.IsSwimming = false;
+        animator.SetBool("IsSwimming", false);
+        animator.SetBool("IsTreadingWater", false);
+    }
+
+    private void OnLayDownEnter()
+    {
+        currentSunbed.photonView.RPC("Occupy", RpcTarget.All, photonView.ViewID);
+        thirdPersonController.isSitting = true;
+        characterController.enabled = false;
+        originalRotation = transform.rotation;
+        originalPosition = transform.position;
+        isLayDown = true;
+
+        animator.SetBool("IsLayDown", true);
+        // sunbed의 LoungerPos의 위치로 이동
+
+        // LoungerPos 오브젝트를 찾습니다.
+        Transform loungerPos = currentSunbed.transform.Find("LoungerPos");
+        if (loungerPos != null)
+        {
+            transform.position = loungerPos.position;
+            transform.rotation = loungerPos.rotation;
+        }
+        // 아웃라인과 텍스트를 숨깁니다.
+        playerOutlineControl.ClearOutline();
+
+    }
+
+    private void OnLayDownExit()
+    {
+        currentSunbed.photonView.RPC("Vacate", RpcTarget.All);
+        transform.position = originalPosition;
+        transform.rotation = originalRotation;
+        isLayDown = false;
+        animator.SetBool("IsLayDown", false);
+        // 원래 위치로 이동
+
+        thirdPersonController.isSitting = false;
+        characterController.enabled = true;
+
+        // 아웃라인과 텍스트를 다시 표시합니다.
+        playerOutlineControl.ShowActionText(transform);
+    }
+
+    private void OnFishingEnter()
+    {
+
+        currrentFisingItem.photonView.RPC("PickUp", RpcTarget.All, photonView.ViewID);
+
+
+        // playerHands = transform.Find(rightHandBone);
+        thirdPersonController.isSitting = true;
+        characterController.enabled = false;
+
+        isFishing = true;
+
+        animator.SetTrigger("IsSitting");
+
+        Transform fixedPos = currrentFisingItem.transform.Find("FixedPos");
+        if (fixedPos != null)
+        {
+            transform.position = fixedPos.position;
+            transform.rotation = fixedPos.rotation;
+        }
+
+        animator.SetBool("IsThrowing", true);
+        // StartCoroutine(ThrowFishingPole());
+    }
+
+    private void OnFishingExit()
+    {
+        currrentFisingItem.photonView.RPC("Drop", RpcTarget.All);
+
+        isFishing = false;
+        animator.SetBool("IsThrowing", false);
+
+        thirdPersonController.isSitting = false;
+        characterController.enabled = true;
+
+        animator.SetTrigger("IsStanding");
+
+        currrentFisingItem = null;
+    }
+
+    // private IEnumerator ThrowFishingPole()
+    // {
+    //     yield return new WaitForSeconds(1f); // Adjust the delay if needed
+    //     bool isThrowing = animator.GetBool("IsThrowing");
+
+    //     if (!isThrowing)
+    //     {
+    //         animator.SetBool("IsThrowing", true);
+    //         yield return new WaitForSeconds(10000f);
+    //         animator.SetBool("IsThrowing", false);
+    //     }
+    // }
+
+    public override void OnDisable()
+    {
+        base.OnDisable();
+
+        if(isLayDown)
+        {
+            PhotonView pv = PhotonView.Find(currentSunbedID);
+            pv.RPC("Vacate", RpcTarget.All);
+        }
+
+        if(isFishing)
+        {
+            PhotonView pv = PhotonView.Find(currentFinshingID);
+            pv.RPC("Vacate", RpcTarget.All);
+            currentFinshingID = -1;
+        }
+    }
+
+    public override void OnLeftRoom()
+    {
+        if (isLayDown)
+        {
+            currentSunbed.photonView.RPC("Vacate", RpcTarget.All);
+        }
+
+        if (isFishing)
+        {
+            currrentFisingItem.photonView.RPC("Vacate", RpcTarget.All);
+        }
+    }
+}
+```
+
+### 5/17
+
+```
+using System.Collections.Generic;
+using UnityEngine;
+using StarterAssets;
+using Photon.Pun;
+
+public class LayDownGetUp : MonoBehaviourPunCallbacks
+{
+    private PhotonView photonView;
+    public bool isLayDown;
+    private GameObject player;
+    private string playerTag = "Player";
+    private KeyCode interactKey = KeyCode.F;
+    public Transform layDownPosition;
+    private int occupiedByPlayerId;
+    private bool isChairOccupied;
+
+    private List<int> playersInRange = new List<int>();
+
+    void Start()
+    {
+        photonView = GetComponent<PhotonView>();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            playersInRange.Add(other.GetComponent<PhotonView>().Owner.ActorNumber);
+            if (player == null)
+            {
+                player = other.gameObject;  // player 변수를 설정합니다.
+            }
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag(playerTag))
+        {
+            playersInRange.Remove(other.GetComponent<PhotonView>().Owner.ActorNumber);
+            if (other.gameObject == player)  // player 변수를 제거합니다.
+            {
+                player = null;
+            }
+            if (other.GetComponent<PhotonView>().Owner.ActorNumber == occupiedByPlayerId)
+            {
+                photonView.RPC("GetUp", RpcTarget.All);
+            }
+        }
+    }
+
+      private void Update()
+    {
+        if (playersInRange.Contains(PhotonNetwork.LocalPlayer.ActorNumber) && Input.GetKeyDown(interactKey))
+        {
+            if (!isLayDown && !isChairOccupied)
+            {
+                photonView.RPC("LayDown", RpcTarget.All, PhotonNetwork.LocalPlayer.ActorNumber);
+            }
+            else
+            {
+                if (PhotonNetwork.LocalPlayer.ActorNumber == occupiedByPlayerId)
+                {
+                    photonView.RPC("GetUp", RpcTarget.All);
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    private void LayDown(int playerPhotonId)
+    {
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        isChairOccupied = true;
+        isLayDown = true;
+        occupiedByPlayerId = playerPhotonId;
+        player.GetComponent<Animator>().SetBool("IsLayDown", true);
+        player.transform.position = layDownPosition.position;
+        player.transform.rotation = layDownPosition.rotation;
+        player.GetComponent<CharacterController>().enabled = false;
+        player.GetComponent<ThirdPersonController>().isSitting = true;
+    }
+
+    [PunRPC]
+    private void GetUp()
+    {
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        isLayDown = false;
+        player.GetComponent<Animator>().SetBool("IsLayDown", false);
+        player.GetComponent<CharacterController>().enabled = true;
+        player.GetComponent<ThirdPersonController>().isSitting = false;
+        isChairOccupied = false;
+        occupiedByPlayerId = 0; // 플레이어가 일어났으므로 ID를 초기화합니다.
+        player = null; // 플레이어 참조를 초기화합니다.
+    }
+}
+```

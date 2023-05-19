@@ -550,3 +550,17 @@ public class Sunbed : MonoBehaviourPunCallbacks, IPunObservable
     }
 }
 ```
+2023-05-17
+- 배포작업 시행 
+- Healing 캐릭터 추가작업
+    - 애니메이션 동기화
+- Merge 버그 픽스
+- 1차 배포
+
+2023-05-18
+- 배포작업 
+    - 애니메이션 동기화
+- Merge 버그 픽스
+- 최종 배포
+- 발표 연습
+- 스크립트 작성

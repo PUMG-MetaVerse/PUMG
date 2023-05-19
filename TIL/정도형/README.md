@@ -2024,3 +2024,309 @@ public class ObjectKnockback : MonoBehaviourPun
     // }
 }
 
+## 2023-05-16
+- 메인 월드 캐릭터 선택 추가
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Networking;
+using System.Text;
+using TMPro;
+// UI : UI 기능 사용을 위한 것
+using UnityEngine.SceneManagement;
+// SceneManagement : 씬 전환을 위한 것
+
+public class TurnOnTheStage_Main : MonoBehaviour {
+    bool bTurnLeft = true;
+    bool bTurnRight = true;
+    public Camera cam;
+    private Quaternion turn = Quaternion.identity;
+    // 정의
+    public static int charactorNum = 1;
+    public TMP_InputField Input_nickname;
+    string playerName;
+    
+    int value = 0;
+	// Use this for initialization
+	void Start () {
+        turn.eulerAngles = new Vector3(0, value, 0);
+        // 각을 초기화합니다.
+        if (cam == null) {
+            cam = Camera.main;  // 만약 위의 public Camera 변수에 카메라가 연결되지 않았다면, 메인 카메라를 참조합니다.
+        }
+	}
+	
+	// Update is called once per frame
+	void Update () {
+        // if(Input.GetKeyDown(KeyCode.LeftArrow))
+        // {
+        //     Debug.Log("Left");
+        //     charactorNum++;
+        //     if (charactorNum == 3)
+        //         charactorNum = 0;
+        //     value -= 90;
+        //     // 각도를 90도 뺍니다.
+        //     bTurnLeft = false;
+        //     // 부울 변수를 취소합니다.
+        // }
+        // if(Input.GetKeyDown(KeyCode.RightArrow))
+        // {
+        //     Debug.Log("Right");
+        //     charactorNum--;
+        //     if (charactorNum == -1)
+        //         charactorNum = 3;
+        //     value += 90;
+        //     // 각도를 90도 더합니다.
+        //     bTurnRight = false;
+        //     // 부울 변수를 취소합니다.
+        // }
+		// if(bTurnLeft)
+        // {
+        //     Debug.Log("Left");
+        //     charactorNum++;
+        //     if (charactorNum == 3)
+        //         charactorNum = 0;
+        //     value -= 90;
+        //     // 각도를 90도 뺍니다.
+        //     bTurnLeft = false;
+        //     // 부울 변수를 취소합니다.
+        // }
+        // if(bTurnRight)
+        // {
+        //     Debug.Log("Right");
+        //     charactorNum--;
+        //     if (charactorNum == -1)
+        //         charactorNum = 3;
+        //     value += 90;
+        //     // 각도를 90도 더합니다.
+        //     bTurnRight = false;
+        //     // 부울 변수를 취소합니다.
+        // }
+        // turn.eulerAngles = new Vector3(0, value, 0);
+        // // 각도를 잽니다.
+        // transform.rotation = Quaternion.Slerp(transform.rotation, turn, Time.deltaTime * 5.0f);
+        // 돌립니다.
+        if(Input.GetKeyDown(KeyCode.LeftArrow) || bTurnLeft)
+        {
+            // ... 기존 코드 생략 ...
+            value -= 180;  // 각도를 180도 뺍니다.
+            bTurnLeft = false;
+            charactorNum = charactorNum==1?2:1;
+            Debug.Log($"캐릭터 넘버 : {charactorNum}");
+        }
+        if(Input.GetKeyDown(KeyCode.RightArrow) || bTurnRight)
+        {
+            // ... 기존 코드 생략 ...
+            value += 180;  // 각도를 180도 더합니다.
+            charactorNum = charactorNum==1?2:1;
+            bTurnRight = false;
+            Debug.Log($"캐릭터 넘버 : {charactorNum}");
+        }
+        // value = value % 360;
+        // ... 기존 코드 생략 ...
+
+        turn.eulerAngles = new Vector3(0, value, 0);
+        cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, turn, Time.deltaTime * 5.0f);  // 카메라를 회전시킵니다.
+        // cam.transform.rotation = Quaternion.RotateTowards(cam.transform.rotation, turn, Time.deltaTime * 200);  // 카메라를 회전시킵니다.
+
+	}
+
+    public void turnLeft()
+    {
+        bTurnLeft = true;
+        bTurnRight = false;
+        // 다른 버튼을 누를때의 컨트롤
+    }
+
+    public void turnRight()
+    {
+        bTurnRight = true;
+        bTurnLeft = false;
+        // 다른 버튼을 누를때의 컨트롤
+    }
+
+    public void turnStage()
+    {
+        // 스테이지 전환을 위한 함수
+        // SceneManager.LoadScene("OnTheStage");
+        Debug.Log($"CharNum : {charactorNum}");
+        playerName = Input_nickname.text;
+        Debug.Log($"CharName : {playerName}");
+        StartCoroutine(sendMessage());
+                // 로그인 정보를 JSON 형식으로 작성
+       
+    }
+    public IEnumerator sendMessage()
+    {
+        Debug.Log($"유저 아이디엑스 턴 온 더 스테이지 : {PlayerPrefs.GetInt("Idx")}");
+        string json = JsonUtility.ToJson(new CharactorDataMain { userIdx = PlayerPrefs.GetInt("Idx"), characterIdx = charactorNum, nickname = playerName});
+
+        // 웹 요청을 생성하고, URL과 HTTP 메서드를 설정합니다.
+        using (UnityWebRequest request = new UnityWebRequest("http://k8b108.p.ssafy.io:6999/api/v1/user/set-world-character", "POST"))
+        {
+            // JSON 형식의 데이터를 전송하기 위한 헤더 설정
+            request.SetRequestHeader("Content-Type", "application/json");
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            request.downloadHandler = new DownloadHandlerBuffer();
+            Debug.Log("요청 보내기 전");
+            // 웹 요청을 보냅니다.
+            yield return request.SendWebRequest();
+            Debug.Log("요청 보낸 후");
+            // 요청이 완료되면 결과를 처리합니다.
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                // 결과값을 받아옵니다.
+                // string result = request.downloadHandler.text;
+                string jsonResponse = request.downloadHandler.text;
+                JsonResponse response = JsonUtility.FromJson<JsonResponse>(jsonResponse);
+                // 결과값을 받아옵니다.
+                // Debug.Log("Message: " + response.message);
+                // Debug.Log("Status: " + response.status);
+
+                UserInfo userInfo = response.data.userInfo;
+                // Debug.Log("Idx: " + userInfo.idx);
+                PlayerPrefs.SetInt("Idx", userInfo.idx);
+                PlayerPrefs.SetInt("CharacterNum",charactorNum);
+                PlayerPrefs.SetString("PlayerName",playerName);
+                // Debug.Log("UserId: " + userInfo.userId);
+                // Debug.Log("UserNickname: " + userInfo.userNickname);
+                // Debug.Log("WorldCharacter: " + userInfo.worldCharacter);
+                // Debug.Log("HealingCharacter: " + userInfo.healingCharacter);
+                // 결과값에 따라 다음 작업을 수행합니다. 예를 들어, 게임 씬을 로드하거나 오류 메시지를 표시합니다.
+                if (response.message == "Success")
+                {
+                    LoadGameScene();
+                }
+                else
+                {
+                    Debug.Log("캐릭터 생성에 실패했습니다.");
+                }
+            }
+            else
+            {
+                Debug.Log("웹 요청에 실패했습니다: " + request.error);
+            }
+        }
+    }
+    private void LoadGameScene()
+    {
+        SceneManager.LoadScene("04 - City");
+    }
+}
+public class CharactorDataMain
+{
+    public int userIdx;
+    public int characterIdx;
+    public string nickname;
+}
+
+## 2023-05-18
+- 자동차 충돌 이벤트 추가
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+using Photon.Pun;
+using Photon.Realtime;
+public class FollowWaypoints : MonoBehaviour
+{
+    public GameObject effectPrefab; // 이펙트 프리팹을 할당합니다.
+    public float forceAmount = 1000f; 
+    public float upwardForce = 300f;
+    public GameObject waypointParent;
+    public float waypointThreshold = 1.0f;
+    private NavMeshAgent agent;
+    private List<Transform> waypoints;
+    private int currentWaypoint = 0;
+    public AudioClip EffectSound;
+    private AudioSource audioSource;
+
+    void Start()
+    {
+        agent = GetComponent<NavMeshAgent>();
+        audioSource =  GetComponent<AudioSource>();
+        if(audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.clip = EffectSound;
+        // Check if the waypointParent is assigned
+        if (waypointParent == null)
+        {
+            Debug.LogError("Waypoint Parent is not assigned. Please assign it in the Inspector.");
+            return;
+        }
+
+        // Initialize the waypoints list and populate it with the children transforms
+        waypoints = new List<Transform>();
+        foreach (Transform child in waypointParent.transform)
+        {
+            waypoints.Add(child);
+        }
+
+        if (waypoints.Count == 0)
+        {
+            Debug.LogError("No waypoints found under the Waypoint Parent. Please add waypoint objects as children.");
+            return;
+        }
+
+        // Set the initial destination to the first waypoint
+        agent.SetDestination(waypoints[currentWaypoint].position);
+    }
+
+    void Update()
+    {
+        // Check if the agent is close enough to the current waypoint
+        if (Vector3.Distance(transform.position, waypoints[currentWaypoint].position) <= waypointThreshold)
+        {
+            // Set the next waypoint as the destination
+            currentWaypoint = (currentWaypoint + 1) % waypoints.Count;
+            agent.SetDestination(waypoints[currentWaypoint].position);
+        }
+    }
+     void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+             GameObject effectInstance = Instantiate(effectPrefab, other.transform.position, Quaternion.identity);
+            audioSource.Play();
+            // 필요한 경우 이펙트 인스턴스의 수명을 설정하고, 시간이 지난 후 자동으로 제거할 수 있습니다.
+            Destroy(effectInstance, 1f);
+
+            // 플레이어의 Character Controller 컴포넌트를 가져옵니다.
+            // CharacterController playerCharacterController = collision.collider.GetComponent<CharacterController>();
+        }
+    }
+    // IEnumerator DestroyParticleAfterSeconds(GameObject instance, float delay)
+    // {
+    //     yield return new WaitForSeconds(delay);
+    //     PhotonNetwork.Destroy(instance);
+    // }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // 부딛힌 상대가 'Player' 태그를 가지고 있는지 확인합니다.
+        if (collision.collider.CompareTag("Player"))
+        {
+            // 충돌 위치에서 이펙트 프리팹을 인스턴스화합니다.
+            GameObject effectInstance = PhotonNetwork.Instantiate(effectPrefab.name, collision.contacts[0].point, Quaternion.identity);
+
+            // 필요한 경우 이펙트 인스턴스의 수명을 설정하고, 시간이 지난 후 자동으로 제거할 수 있습니다.
+            PhotonNetwork.Destroy(effectInstance);
+
+            // 플레이어의 Character Controller 컴포넌트를 가져옵니다.
+            CharacterController playerCharacterController = collision.collider.GetComponent<CharacterController>();
+
+            // Character Controller가 있는지 확인합니다.
+            if (playerCharacterController != null)
+            {
+                // 플레이어를 날려보내기 위한 힘을 계산합니다.
+                Vector3 forceDirection = (collision.transform.position - transform.position).normalized;
+                forceDirection.y = 1; // 대각선 방향으로 날리기 위해 Y값을 1로 설정합니다.
+
+                // 플레이어에게 힘을 가합니다.
+                playerCharacterController.Move(forceDirection * forceAmount * Time.deltaTime);
+            }
+        }
+    }
+}
